@@ -4,10 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 bitfield = "0.14.0"
+lazy_static = { version = "1.4.0", default-features = false,features=["spin_no_std"] }
+spin = "0.9.4"
+static_assertions = "1.1.0"
 volatile = "0.4.5"
 
 [build-dependencies]
 cc = "1.0.77"
+
+[profile.release]
+lto = true

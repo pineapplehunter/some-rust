@@ -17,6 +17,8 @@ SECTIONS{
 		. = ALIGN(8);
 	    PROVIDE(__DATA_START = .);
 	    *(.data)
+		*(.data*)
+		*(.rodata*)
 	    PROVIDE(__DATA_END = .);
 	} > ROM
 

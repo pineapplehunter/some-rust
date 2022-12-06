@@ -11,3 +11,4 @@ TOMAIN:
     addi sp, sp,1024
 
     call main
+    j .
