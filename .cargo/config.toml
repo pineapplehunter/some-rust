@@ -1,0 +1,7 @@
+[build]
+target = "riscv64i.json"
+rustflags = ["-C", "link-arg=-Tlinker.ld"]
+
+[unstable]
+build-std = ["core"]
+build-std-features = ["compiler-builtins-mem"]
