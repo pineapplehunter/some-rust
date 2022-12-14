@@ -8,7 +8,7 @@ _start:
     call _clear_bss
 
     call loader_main
-    call ram_main
+    call __RAM_PROGRAM_START
     j .
 
 .global _set_sp
