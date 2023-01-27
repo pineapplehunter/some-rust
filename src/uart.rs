@@ -1,11 +1,9 @@
 use core::fmt::{self, Write};
 use core::mem::size_of;
-use spin::Mutex;
 
 use crate::delay::delay;
 use crate::linker::__UART_START;
 
-use lazy_static::lazy_static;
 use volatile::Volatile;
 
 #[repr(C)]
@@ -22,11 +20,15 @@ struct UARTInner {
 
 static_assertions::const_assert!(size_of::<UARTInner>() == 16);
 
-lazy_static! {
-    pub static ref UART0: Mutex<UART> = Mutex::new(UART(unsafe { __UART_START }));
-}
+pub static mut UART0: Option<UART> = None;
 
 pub struct UART(usize);
+
+impl UART {
+    pub const fn initialize(address: usize) -> Self {
+        Self(address)
+    }
+}
 
 impl fmt::Write for UART {
     fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -43,7 +45,14 @@ impl fmt::Write for UART {
 }
 
 pub fn _print(args: fmt::Arguments) {
-    UART0.lock().write_fmt(args).unwrap();
+    unsafe {
+        if UART0.is_none() {
+            UART0.replace(UART::initialize(__UART_START));
+        }
+        if let Some(uart) = &mut UART0 {
+            uart.write_fmt(args).unwrap();
+        }
+    }
 }
 
 #[macro_export]

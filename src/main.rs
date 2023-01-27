@@ -1,12 +1,13 @@
 #![no_std]
 #![no_main]
+#![feature(linkage)]
 
 mod delay;
 mod linker;
 mod uart;
 
-use core::fmt::Write;
 use core::panic::PanicInfo;
+use core::{arch::global_asm, fmt::Write};
 use delay::delay;
 use linker::{__RAM_START, __UART_START};
 use uart::UART0;
@@ -33,6 +34,12 @@ pub extern "C" fn loader_main(thread_id: usize) {
 
 #[panic_handler]
 fn _panic(info: &PanicInfo) -> ! {
-    writeln!(UART0.lock(), "{:?}", info).ok();
+    unsafe {
+        if let Some(uart) = &mut UART0 {
+            writeln!(uart, "{:?}", info).ok();
+        }
+    }
     loop {}
 }
+
+global_asm!(include_str!("boot.s"));

@@ -1,12 +1,29 @@
-OBJCOPY := riscv64-unknown-elf-objcopy
+RISCV_PREFIX ?= riscv64-unknown-elf-
+OBJCOPY ?= $(RISCV_PREFIX)objcopy
+OBJDUMP ?= $(RISCV_PREFIX)objdump
+RUST_TARGET := output/some-rust
+RUST_SOURCES := $(shell find src -type f) Cargo.lock Cargo.toml
 
-all: loader_binary.o
+.PHONY: all clean
 
-loader_binary.o: loader_binary.bin
+all: output/loader_binary.o output/loader_binary.dump output/loader.dump
+
+output/loader_binary.o: output/loader_binary.bin
 	$(OBJCOPY) --input binary $< -O elf64-littleriscv $@
 
-loader_binary.bin: /home/shogo/some-rust/target/riscv64i/release/some-rust
+output/loader_binary.bin: $(RUST_TARGET)
 	$(OBJCOPY) $< -O binary $@
 
-/home/shogo/some-rust/target/riscv64i/release/some-rust:
-	cargo build --release
+output/loader_binary.dump: output/loader_binary.o
+	$(OBJDUMP) $< -D > $@
+
+output/loader.dump: $(RUST_TARGET)
+	$(OBJDUMP) $< -D > $@
+
+$(RUST_TARGET): $(RUST_SOURCES)
+	cargo build -Z unstable-options --out-dir output
+
+clean:
+	cargo clean
+	rm -f *.dump *.o *.bin
+	rm -f output/*
