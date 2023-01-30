@@ -9,16 +9,16 @@ RUST_SOURCES := $(shell find src -type f) Cargo.lock Cargo.toml
 all: output/loader_binary.o output/loader_binary.dump output/loader.dump
 
 output/loader_binary.o: output/loader_binary.bin
-	$(OBJCOPY) --input binary $< -O elf64-littleriscv $@
+	$(OBJCOPY) -I binary -O elf64-littleriscv --set-section-alignment .data=8 $< $@
 
 output/loader_binary.bin: $(RUST_TARGET)
-	$(OBJCOPY) $< -O binary $@
+	$(OBJCOPY) -O binary $< $@
 
 output/loader_binary.dump: output/loader_binary.o
 	$(OBJDUMP) $< -D > $@
 
 output/loader.dump: $(RUST_TARGET)
-	$(OBJDUMP) $< -D > $@
+	$(OBJDUMP) $< -d -j .text -j .rodata -j .data  > $@
 
 $(RUST_TARGET): $(RUST_SOURCES)
 	cargo build -Z unstable-options --out-dir output
