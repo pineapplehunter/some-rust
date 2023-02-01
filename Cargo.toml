@@ -13,6 +13,5 @@ volatile = "0.4.5"
 cc = "1.0.77"
 
 [profile.release]
-lto = true
 overflow-checks = true
 debug-assertions = true

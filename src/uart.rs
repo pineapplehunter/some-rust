@@ -44,6 +44,35 @@ impl fmt::Write for UART {
     }
 }
 
+pub trait Read {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, ()>;
+}
+
+impl Read for UART {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, ()> {
+        let mut uart = Volatile::new(unsafe { &mut *(self.0 as *mut UARTInner) });
+        let mut i = 0;
+        'outer: loop {
+            let mut break_count = 3;
+            while uart.map(|v| &v.stat).read() & 0b0001 == 0 {
+                delay(100);
+                break_count -= 1;
+                if break_count == 0 {
+                    break 'outer;
+                }
+            }
+
+            let b = uart.map_mut(|v| &mut v.rx).read();
+            i += 1;
+            buf[i] = b;
+            if i == buf.len() {
+                break;
+            }
+        }
+        Ok(i)
+    }
+}
+
 pub fn _print(args: fmt::Arguments) {
     unsafe {
         if UART0.is_none() {

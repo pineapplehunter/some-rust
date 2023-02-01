@@ -18,10 +18,10 @@ output/loader_binary.dump: output/loader_binary.o
 	$(OBJDUMP) $< -D > $@
 
 output/loader.dump: $(RUST_TARGET)
-	$(OBJDUMP) $< -d -j .text -j .rodata -j .data  > $@
+	$(OBJDUMP) $< -d -j .text -j .rodata -j .data -j .bss -C > $@
 
 $(RUST_TARGET): $(RUST_SOURCES)
-	cargo build -Z unstable-options --out-dir output
+	cargo build --release -Z unstable-options --out-dir output
 
 clean:
 	cargo clean
