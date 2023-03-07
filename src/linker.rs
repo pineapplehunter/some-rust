@@ -1,6 +1,15 @@
+use crate::sifive_u_uart::UARTInner;
+
+#[allow(dead_code)]
 extern "C" {
-    pub static __UART_START: usize;
-    pub static __GPIO_START: usize;
-    pub static __RAM_START: usize;
-    pub static __RAM_PROGRAM_START: usize;
+    #[link_name = "__UART_START"]
+    pub static mut UART: UARTInner;
+    #[link_name = "__GPIO_START"]
+    pub static GPIO: u32;
+    #[link_name = "__RAM_START"]
+    pub static RAM: [u8; 256 * 1024 * 1024];
+    #[link_name = "__RAM_PROGRAM_START"]
+    pub static RAM_PROGRAM_START: u8;
+    #[link_name = "__PROGRAM_END"]
+    pub static PROGRAM_END: u8;
 }

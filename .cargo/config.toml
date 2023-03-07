@@ -1,6 +1,9 @@
 [build]
-target = "riscv64ic.json"
+target = "riscv64-custom.json"
+
+[target."riscv64-custom"]
 rustflags = ["-C", "link-arg=-Tlinker.ld"]
+runner = "qemu-system-riscv64 -machine sifive_u -cpu rv64 -m 256M -bios none -display none -serial stdio -kernel"
 
 [unstable]
 build-std = ["core"]

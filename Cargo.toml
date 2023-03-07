@@ -5,13 +5,25 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bitfield = "0.14.0"
+embedded-hal = "0.2.7"
+nb = "1.0.0"
+riscv = "0.10.1"
+spin = { version = "0.9.5", default-features = false, features = [
+    "lazy",
+    "spin_mutex"
+] }
 static_assertions = "1.1.0"
+staticvec = { version = "0.11.9", default-features = false }
 volatile = "0.4.5"
 
 [build-dependencies]
 cc = "1.0.77"
 
 [profile.release]
-overflow-checks = true
-debug-assertions = true
+lto = true
+
+#overflow-checks = true
+#debug-assertions = true
+[features]
+default = ["unicode"]
+unicode = []

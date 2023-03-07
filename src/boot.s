@@ -35,66 +35,154 @@ li x30,0
 li x31,0
 .endm
 
+
+.macro set_sp
+    la sp, __PROGRAM_END
+    li s0, 1024*64
+    add sp, sp, s0
+    csrr a0, mhartid
+1:
+    beqz a0, 2f
+    add sp,sp,s0
+    addi a0,a0,-1
+    j 1b
+2:
+.endm
+
 .section .text.init
 .global _start
 _start:
     init_all_regs
-    call _set_sp
-    call _clear_bss
+
+    set_sp
+
+    csrr tp, mhartid
+
+    li a0, '0'
+    csrr a1, mhartid
+    add a0,a0,a1
+    la a1, __UART_START
+    sw a0, 0(a1)
+    la a0, _trap
+    csrw mtvec, a0
 
     call loader_main
     call __RAM_PROGRAM_START
     j .
 
-.global _set_sp
-_set_sp:
-    la sp, __RAM_START
-    addi sp,sp,1024
-    mv a0,tp
-.L_bump_sp:
-    beqz a0, .L_end_set_sp
-    addi sp,sp,1024
-    addi a0,a0,-1
-    j .L_bump_sp
-.L_end_set_sp:
-    ret
+.macro get_value_offset_and_print_to_uart offset
+    mv a2,a0
+    srli a2, a2, \offset*4
+    andi a2, a2, 0x0F
+    li a3,10
+    bge a2, a3, 1f
+    addi a2,a2,'0'
+    j 2f
+1:
+    addi a2, a2, -10
+    addi a2, a2, 'A'
+2:
+    sw a2, 0(a1)
+.endm
 
-.global _clear_bss
-_clear_bss:
-.L_clear_init_done:
-    la a0,init_done
-    li a1,0
-    sb a1,0(a0)
-    bnez tp, .L_wait_for_init
-.L_init_bss:
-    la a0,__BSS_START
-    la a1,__BSS_END
-    li a2,0
-.L_clear_next:
-    sd a2,0(a0)
-    bge a0,a1,.L_end_init_bss
-    addi a0,a0,8
-    j .L_clear_next
-.L_end_init_bss:
-    la a0,init_done
-    li a1,1
-    sb a1,0(a0)
-    j .L_end_clear_bss
-.L_wait_for_init:
-    li a2,100
-.L_wait_inner:
-    beqz a2, .L_check_init
+.macro print_64_bit_value
+    la a1, __UART_START
+    get_value_offset_and_print_to_uart 15
+    get_value_offset_and_print_to_uart 14
+    get_value_offset_and_print_to_uart 13
+    get_value_offset_and_print_to_uart 12
+    get_value_offset_and_print_to_uart 11
+    get_value_offset_and_print_to_uart 10
+    get_value_offset_and_print_to_uart 9
+    get_value_offset_and_print_to_uart 8
+    get_value_offset_and_print_to_uart 7
+    get_value_offset_and_print_to_uart 6
+    get_value_offset_and_print_to_uart 5
+    get_value_offset_and_print_to_uart 4
+    get_value_offset_and_print_to_uart 3
+    get_value_offset_and_print_to_uart 2
+    get_value_offset_and_print_to_uart 1
+    get_value_offset_and_print_to_uart 0
+    li a2, '\n'
+    sw a2, 0(a1)
+.endm
+
+.macro print_64_bit_value_a0
+    la a1, __UART_START
+    li a2, 15
+1:
+    mv a3, a0
+    mv a4, a2
+    slli a4, a4, 2
+    srl a3, a3, a4
+    andi a3, a3, 0xF
+    li a4, 10
+    bge a3, a4, 3f
+5:
+    addi a3, a3, '0'
+    j 4f
+3:
+    addi a3, a3, -10
+    addi a3, a3, 'A'
+4:
+    sw a3, 0(a1)
+    beqz a2, 2f
     addi a2,a2,-1
-    j .L_wait_inner
-.L_check_init:
-    lb a1,0(a0)
-    bnez a1, .L_end_clear_bss
-    j .L_wait_for_init
-.L_end_clear_bss:
-    li a0,0
-    li a1,0
-    li a2,0
-    ret
+    j 1b
+2:
+    li a2, '\n'
+    sw a2, 0(a1)
+.endm
+
+.macro print_char_lit char_reg
+    mv a0, \char_lit
+    la a1, __UART_START
+    sw a0, 0(a1)
+.endm
+
+.macro print_str_ptr str_ptr_reg
+    la a1, __UART_START
+    mv a2, \str_ptr_reg
+1:
+    lbu a0, 0(a2)
+    beqz a0, 2f
+    sw a0, 0(a1)
+    addi a2, a2, 1
+    j 1b
+2:
+.endm
+
+
+
+.align 4
+.globl _trap
+_trap:
+    la a1, __UART_START
+    li a2, '\n'
+    sw a2, 0(a1)
+    sw a2, 0(a1)
+    sw a2, 0(a1)
+
+    mv tp, a0
+
+    la a0, mhartid_str
+    print_str_ptr a0
+    csrr a0, mhartid
+    print_64_bit_value_a0
+    csrr a0, mepc 
+    print_64_bit_value_a0
+    csrr a0, mcause
+    print_64_bit_value_a0
+    mv a0, sp
+    print_64_bit_value_a0
+    mv a0, ra
+    print_64_bit_value_a0
+    mv a0, tp
+    print_64_bit_value_a0
+    j .
+
+.section .data
+mhartid_str: .string "mhartid: \t"
 
 .section .bss
 init_done: .byte 0
