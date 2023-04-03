@@ -8,7 +8,7 @@ edition = "2021"
 embedded-hal = "0.2.7"
 nb = "1.0.0"
 riscv = "0.10.1"
-spin = { version = "0.9.5", default-features = false, features = [
+spin = { version = "0.9.8", default-features = false, features = [
     "lazy",
     "spin_mutex"
 ] }
