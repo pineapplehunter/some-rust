@@ -9,13 +9,6 @@
   outputs = { self, nixpkgs, rust-overlay }:
     let
       pkgs = import nixpkgs { system = "x86_64-linux"; overlays = [ rust-overlay.overlays.default ]; };
-      pkgsCross = import nixpkgs {
-        localSystem = "x86_64-linux";
-        crossSystem = nixpkgs.legacyPackages.x86_64-linux.lib.systems.examples.riscv64-embedded // {
-          rustc.config = "riscv64-custom";
-          rustc.platform = builtins.fromJSON (builtins.readFile ./riscv64-custom.json);
-        };
-      };
       rust-bin = pkgs.rust-bin.nightly.latest.minimal.override {
         extensions = [ "rust-src" ];
       };
@@ -26,8 +19,8 @@
         rustc = rust-bin;
         cargo = rust-bin;
       }).buildRustPackage {
-        pname = "ha";
-        version = "819203";
+        pname = "rust-bootloader";
+        version = "0.1.0";
 
         src = ./.;
         cargoLock = {
