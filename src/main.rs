@@ -3,21 +3,23 @@
 
 mod delay;
 mod linker;
-mod sifive_u_uart;
+#[cfg(feature = "uart_sifive_u")]
+#[path = "uart_sifive_u.rs"]
+mod uart;
 
 use core::arch::asm;
+use core::mem::size_of;
 use core::panic::PanicInfo;
 use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use core::{arch::global_asm, fmt::Write};
 use delay::delay;
 use embedded_hal::serial::Read;
 use linker::UART;
-use sifive_u_uart::{Uart, UART0};
-use spin::Lazy;
+use uart::{Uart, UART0};
 
 use crate::linker::{GPIO, PROGRAM_END, RAM};
 
-static LOAD_DONE: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
+static LOAD_DONE: AtomicBool = AtomicBool::new(false);
 
 fn show_program_info() {
     unsafe {
@@ -46,20 +48,69 @@ pub fn get_thread_id() -> usize {
     thread_id
 }
 
+struct FibonacciIterator(u64, u64);
+
+impl FibonacciIterator {
+    pub fn new() -> Self {
+        FibonacciIterator(0, 0)
+    }
+}
+
+impl Iterator for FibonacciIterator {
+    type Item = u64;
+
+    #[inline(never)]
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(match (&mut self.1, &mut self.0) {
+            (0, 0) => {
+                self.0 = 1;
+                0
+            }
+            (0, 1) => {
+                self.0 = 2;
+                1
+            }
+            (0, 2) => {
+                self.0 = 1;
+                self.1 = 1;
+                1
+            }
+            (b, a) => {
+                let t = *a;
+                *a = *b;
+                *b = b.checked_add(t)?;
+                *b
+            }
+        })
+    }
+}
+
+#[inline(never)]
+fn fibonacci() {
+    for (i, v) in FibonacciIterator::new().enumerate() {
+        println!("fib({:>3}) = {:>32X}", i, v);
+    }
+    println!(
+        "size of FibonacciIterator = {}",
+        size_of::<FibonacciIterator>()
+    )
+}
+
 #[no_mangle]
 pub extern "C" fn loader_main() {
     let thread_id = get_thread_id();
     debug!("start loading!");
     debug!("Hello 世界!");
-    let mut output_buf = staticvec::StaticString::<128>::new();
-    writeln!(&mut output_buf, "{:#?}", &UART0).expect("failed to write to output buffer");
-    println!("{}", output_buf);
+    // let mut output_buf = staticvec::StaticString::<512>::new();
+    // writeln!(&mut output_buf, "{:#?}", &UART0).expect("failed to write to output buffer");
+    // println!("{}", output_buf);
 
     let time = riscv::register::cycle::read();
     dbg!(time);
     if thread_id == 0 {
         println!("Hello!");
         println!("I am B4Processor!");
+        fibonacci();
         show_program_info();
         LOAD_DONE.store(true, Relaxed);
         echo();

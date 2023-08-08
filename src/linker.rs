@@ -1,4 +1,4 @@
-use crate::sifive_u_uart::UARTInner;
+use crate::uart::UARTInner;
 
 #[allow(dead_code)]
 extern "C" {

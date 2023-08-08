@@ -13,7 +13,7 @@ spin = { version = "0.9.5", default-features = false, features = [
     "spin_mutex"
 ] }
 static_assertions = "1.1.0"
-staticvec = { version = "0.11.9", default-features = false }
+# staticvec = { version = "0.11.9", default-features = false }
 volatile = "0.4.5"
 
 [build-dependencies]
@@ -25,5 +25,19 @@ lto = true
 #overflow-checks = true
 #debug-assertions = true
 [features]
-default = ["unicode"]
+default = ["unicode", "uart_sifive_u"]
 unicode = []
+uart_sifive_u = []
+
+[dev-dependencies]
+allocator-api2 = "=0.2.15"
+cc = "=1.0.79"
+cfg-if = "1.0.0"
+compiler_builtins = "=0.1.98"
+dlmalloc = "0.2.4"
+fortanix-sgx-abi = "0.5.0"
+getopts = "0.2.21"
+hashbrown = "0.14.0"
+hermit-abi = "0.3.2"
+rustc-demangle = "0.1.23"
+wasi = "0.11.0"

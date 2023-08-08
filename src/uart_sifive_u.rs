@@ -107,6 +107,7 @@ impl fmt::Write for Uart {
     }
 }
 
+#[inline(never)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     let mut uart = UART0.lock();
@@ -116,7 +117,7 @@ pub fn _print(args: fmt::Arguments) {
 /// print a string
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::sifive_u_uart::_print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::uart::_print(format_args!($($arg)*)));
 }
 
 /// print a string followed by a new line
