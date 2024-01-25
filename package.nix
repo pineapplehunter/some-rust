@@ -7,7 +7,7 @@
 }:
 
 let
-  inherit (pkgsCross) riscv64;
+  riscv64 = pkgsCross.riscv64-embedded;
   latest-nightly = rust-bin.nightly.latest;
   rust-bin' = latest-nightly.default.override {
     extensions = [ "rust-src" ];
@@ -23,11 +23,11 @@ stdenv.mkDerivation rec {
 
   src = lib.cleanSource ./.;
 
-  buildInputs = [ rust-bin' rustPlatform.cargoSetupHook ];
+  nativeBuildInputs = [ rust-bin' rustPlatform.cargoSetupHook riscv64.stdenv.cc ];
 
   cargoDeps = rustPlatform.fetchCargoTarball {
     inherit src;
-    hash = "sha256-TfPKumuyfG922iSFdKVcuu7Dt+Zucpr/HeC/LyH/EQk=";
+    hash = "sha256-0NDfxzftyWVWghdaC9I2ba9nT50xLUNxlzwOGDfUsr8=";
 
     buildPhase = ''
       runHook preBuild
@@ -96,14 +96,12 @@ stdenv.mkDerivation rec {
     '';
   };
 
-  buildPhase = ''
-    make OBJDUMP="${riscv64.binutils}/bin/objdump" OBJCOPY="${riscv64.binutils}/bin/objcopy"
-  '';
+  makeFlags = [
+    "RISCV_PREFIX=${riscv64.stdenv.cc.targetPrefix}"
+  ];
 
   installPhase = ''
     mkdir $out
     cp output/* $out/
   '';
-
-  RUST_SRC_PATH = "${latest-nightly.rust-src}/lib/rustlib/src/rust/library/";
 }

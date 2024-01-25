@@ -100,7 +100,7 @@ unsafe fn inner_product_u16_pext(a: &mut [i16], b: &[i16]) {
 
 #[inline(never)]
 #[no_mangle]
-pub extern "C" fn main(thread_id: usize) {
+fn main(thread_id: usize) {
     if thread_id != 0 {
         return;
     }

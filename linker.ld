@@ -21,7 +21,7 @@ SECTIONS{
 		*(.data .data*)
 		*(.sdata .sdata*)
 	} > RAM
-	.bss ALIGN(0x1000) : {
+	.bss ALIGN(64) : {
 		PROVIDE(__BSS_START = .);
 		*(.bss .bss*)
 		*(.sbss .sbss*)

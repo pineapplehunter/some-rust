@@ -12,4 +12,8 @@ extern "C" {
     pub static RAM_PROGRAM_START: u8;
     #[link_name = "__PROGRAM_END"]
     pub static PROGRAM_END: u8;
+    #[link_name = "__BSS_START"]
+    pub static BSS_START: u64;
+    #[link_name = "__BSS_END"]
+    pub static BSS_END: u64;
 }

@@ -1,6 +1,6 @@
-RISCV_PREFIX ?= riscv64-none-elf-
-OBJCOPY ?= $(RISCV_PREFIX)objcopy
-OBJDUMP ?= $(RISCV_PREFIX)objdump
+RISCV_PREFIX = riscv64-none-elf-
+OBJCOPY = $(RISCV_PREFIX)objcopy
+OBJDUMP = $(RISCV_PREFIX)objdump
 RUST_TARGET := output/rust-riscv-benches
 RUST_TARGET2 := output/bench
 RUST_TARGET3 := output/inner_product
