@@ -1,20 +1,15 @@
 #![no_std]
 #![no_main]
 
-mod delay;
-mod linker;
-#[cfg(feature = "uart_sifive_u")]
-#[path = "uart_sifive_u.rs"]
-mod uart;
-
-use core::arch::asm;
+use core::fmt::Write;
 use core::mem::size_of;
 use core::panic::PanicInfo;
+use core::ptr::{addr_of, addr_of_mut, NonNull};
 use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
-use core::{arch::global_asm, fmt::Write};
-use delay::delay;
-use embedded_hal::serial::Read;
+use embedded_hal_nb::serial::Read;
 use linker::UART;
+use rust_riscv_benches::delay::delay;
+use rust_riscv_benches::{dbg, debug, get_thread_id, info, linker, println, uart};
 use uart::{Uart, UART0};
 
 use crate::linker::{GPIO, PROGRAM_END, RAM};
@@ -23,10 +18,10 @@ static LOAD_DONE: AtomicBool = AtomicBool::new(false);
 
 fn show_program_info() {
     unsafe {
-        dbg!(&UART as *const _);
-        dbg!(&GPIO as *const _);
-        dbg!(&RAM as *const _);
-        dbg!(&PROGRAM_END as *const _);
+        dbg!(addr_of!(UART));
+        dbg!(addr_of!(GPIO));
+        dbg!(addr_of!(RAM));
+        dbg!(addr_of!(PROGRAM_END));
     }
 }
 
@@ -38,14 +33,6 @@ fn echo() {
         info!("received!", b as char);
         delay(1000);
     }
-}
-
-/// get thread id assuming `mhartid` is stored in `tp`
-#[inline(always)]
-pub fn get_thread_id() -> usize {
-    let thread_id: usize;
-    unsafe { asm!("mv {tp}, tp", tp = out(reg) thread_id) };
-    thread_id
 }
 
 struct FibonacciIterator(u64, u64);
@@ -97,10 +84,16 @@ fn fibonacci() {
 }
 
 #[no_mangle]
-pub extern "C" fn loader_main() {
+#[inline(never)]
+pub extern "C" fn main() {
     let thread_id = get_thread_id();
     debug!("start loading!");
     debug!("Hello 世界!");
+    debug!(
+        "thread id = {}, id*id = {}",
+        thread_id,
+        thread_id * thread_id
+    );
     // let mut output_buf = staticvec::StaticString::<512>::new();
     // writeln!(&mut output_buf, "{:#?}", &UART0).expect("failed to write to output buffer");
     // println!("{}", output_buf);
@@ -127,12 +120,10 @@ pub extern "C" fn loader_main() {
 #[panic_handler]
 fn _panic(info: &PanicInfo) -> ! {
     let _uart = UART0.try_lock();
-    let mut uart = Uart::new(unsafe { &mut linker::UART });
+    let mut uart = Uart::new(unsafe { NonNull::new_unchecked(addr_of_mut!(UART)) });
     writeln!(uart).ok();
     writeln!(uart).ok();
     writeln!(uart, "!!!!! panic at thread {} !!!!!", get_thread_id()).ok();
     writeln!(uart, "{}", info).ok();
     loop {}
 }
-
-global_asm!(include_str!("boot.s"));

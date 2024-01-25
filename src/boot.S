@@ -66,7 +66,9 @@ _start:
     la a0, _trap
     csrw mtvec, a0
 
-    call loader_main
+    call zero_bss
+    mv a0, tp
+    call init_rt
     call __RAM_PROGRAM_START
     j .
 
@@ -152,7 +154,17 @@ _start:
 2:
 .endm
 
-
+zero_bss:
+    la a0, __BSS_START
+    la a1, __BSS_END
+    li a2, 0
+0:
+    blt a1, a0, 1f
+    sd a2, 0(a0)
+    addi a0,a0,8
+    j 0b
+1:
+    ret
 
 .align 4
 .globl _trap
@@ -185,4 +197,5 @@ _trap:
 mhartid_str: .string "mhartid: \t"
 
 .section .bss
-init_done: .byte 0
+init_done: .byte
+THREAD_COUNT: .double

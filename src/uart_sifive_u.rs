@@ -1,13 +1,14 @@
-use core::convert::Infallible;
 use core::fmt;
 use core::mem::size_of;
+use core::ptr::addr_of_mut;
+use core::ptr::NonNull;
 
 use crate::linker::UART;
 
-use embedded_hal::serial;
+use embedded_hal_nb::serial::{self, ErrorKind, ErrorType};
 use nb::block;
 use spin::{Lazy, Mutex};
-use volatile::Volatile;
+use volatile::{map_field, VolatilePtr};
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -29,23 +30,30 @@ impl fmt::Debug for UARTInner {
 
 static_assertions::const_assert_eq!(size_of::<UARTInner>(), 4 * 7);
 
-pub static UART0: Lazy<Mutex<Uart>> = Lazy::new(|| Mutex::new(Uart::new(unsafe { &mut UART })));
+pub static UART0: Lazy<Mutex<Uart>> =
+    Lazy::new(|| unsafe { Mutex::new(Uart::new(NonNull::new_unchecked(addr_of_mut!(UART)))) });
 
 #[derive(Debug)]
-pub struct Uart(Volatile<&'static mut UARTInner>);
+#[repr(transparent)]
+pub struct Uart(VolatilePtr<'static, UARTInner>);
+
+unsafe impl Sync for Uart {}
+unsafe impl Send for Uart {}
 
 impl Uart {
-    pub fn new(uart_ref: &'static mut UARTInner) -> Self {
-        Self(Volatile::new(uart_ref))
+    pub fn new(uart_ref: NonNull<UARTInner>) -> Self {
+        Self(unsafe { VolatilePtr::new(uart_ref) })
     }
 }
 
-impl serial::Read<u8> for Uart {
-    type Error = Infallible;
+impl ErrorType for Uart {
+    type Error = ErrorKind;
+}
 
+impl serial::Read<u8> for Uart {
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
         let uart = &self.0;
-        let b = uart.map(|v| &v.rx).read();
+        let b = map_field!(uart.rx).read();
         let rx_full = 0x8000_0000;
         if b & rx_full != 0 {
             Err(nb::Error::WouldBlock)
@@ -56,8 +64,6 @@ impl serial::Read<u8> for Uart {
 }
 
 impl serial::Write<u8> for Uart {
-    type Error = Infallible;
-
     fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
         block!(self.write_byte(byte))?;
         Ok(())
@@ -68,13 +74,16 @@ impl serial::Write<u8> for Uart {
     }
 }
 
-impl Uart {
-    fn write_byte(&mut self, byte: u8) -> nb::Result<(), Infallible> {
+impl Uart
+where
+    Self: serial::ErrorType,
+{
+    fn write_byte(&mut self, byte: u8) -> nb::Result<(), <Self as serial::ErrorType>::Error> {
         let uart = &mut self.0;
-        let b = uart.map(|v| &v.tx).read();
+        let b = map_field!(uart.tx).read();
         let tx_full: u32 = 0x8000_0000;
         if b & tx_full == 0 {
-            uart.map_mut(|v| &mut v.tx).write(byte as u32);
+            map_field!(uart.tx).write(byte as u32);
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -123,8 +132,8 @@ macro_rules! print {
 /// print a string followed by a new line
 #[macro_export]
 macro_rules! println {
-    ($fmt:expr) => (print!(concat!($fmt, "\n")));
-    ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
+    ($fmt:expr) => ($crate::print!(concat!($fmt, "\n")));
+    ($fmt:expr, $($arg:tt)*) => ($crate::print!(concat!($fmt, "\n"), $($arg)*));
 }
 
 /// show content of a variable
@@ -159,7 +168,7 @@ macro_rules! log_macro_impl {
         // let thread_id = riscv::register::mhartid::read();
         let thread_id = get_thread_id();
         // let cycle = riscv::register::cycle::read();
-        println!(
+        $crate::println!(
             core::concat!("[thread={} ",::core::file!(),":",::core::line!()," {}] ", $color, core::stringify!($level),"\x1b[0m {}" $(,ignore!($e," {:#?}"))*),
             thread_id,
             0,
