@@ -36,7 +36,7 @@ li x31,0
 .endm
 
 .macro set_sp
-    la sp, __PROGRAM_END
+    la sp, __HEAP_END
     li s0, 1024*64
     add sp, sp, s0
     csrr a0, mhartid
@@ -56,12 +56,6 @@ _start:
     set_sp
 
     csrr tp, mhartid
-
-    li a0, '0'
-    csrr a1, mhartid
-    add a0, a0, a1
-    la a1, __UART_START
-    sw a0, 0(a1)
     la a0, m_trap_vector
     csrw mtvec, a0
 
@@ -70,87 +64,6 @@ _start:
     call __RAM_PROGRAM_START
     j .
 
-.macro get_value_offset_and_print_to_uart offset
-    mv a2,a0
-    srli a2, a2, \offset*4
-    andi a2, a2, 0x0F
-    li a3,10
-    bge a2, a3, 1f
-    addi a2,a2,'0'
-    j 2f
-1:
-    addi a2, a2, -10
-    addi a2, a2, 'A'
-2:
-    sw a2, 0(a1)
-.endm
-
-.macro print_64_bit_value
-    la a1, __UART_START
-    get_value_offset_and_print_to_uart 15
-    get_value_offset_and_print_to_uart 14
-    get_value_offset_and_print_to_uart 13
-    get_value_offset_and_print_to_uart 12
-    get_value_offset_and_print_to_uart 11
-    get_value_offset_and_print_to_uart 10
-    get_value_offset_and_print_to_uart 9
-    get_value_offset_and_print_to_uart 8
-    get_value_offset_and_print_to_uart 7
-    get_value_offset_and_print_to_uart 6
-    get_value_offset_and_print_to_uart 5
-    get_value_offset_and_print_to_uart 4
-    get_value_offset_and_print_to_uart 3
-    get_value_offset_and_print_to_uart 2
-    get_value_offset_and_print_to_uart 1
-    get_value_offset_and_print_to_uart 0
-    li a2, '\n'
-    sw a2, 0(a1)
-.endm
-
-.macro print_64_bit_value_a0
-    la a1, __UART_START
-    li a2, 15
-1:
-    mv a3, a0
-    mv a4, a2
-    slli a4, a4, 2
-    srl a3, a3, a4
-    andi a3, a3, 0xF
-    li a4, 10
-    bge a3, a4, 3f
-5:
-    addi a3, a3, '0'
-    j 4f
-3:
-    addi a3, a3, -10
-    addi a3, a3, 'A'
-4:
-    sw a3, 0(a1)
-    beqz a2, 2f
-    addi a2,a2,-1
-    j 1b
-2:
-    li a2, '\n'
-    sw a2, 0(a1)
-.endm
-
-.macro print_char_lit char_reg
-    mv a0, \char_lit
-    la a1, __UART_START
-    sw a0, 0(a1)
-.endm
-
-.macro print_str_ptr str_ptr_reg
-    la a1, __UART_START
-    mv a2, \str_ptr_reg
-1:
-    lbu a0, 0(a2)
-    beqz a0, 2f
-    sw a0, 0(a1)
-    addi a2, a2, 1
-    j 1b
-2:
-.endm
 
 .altmacro
 .set NUM_GP_REGS, 32  # Number of registers per context

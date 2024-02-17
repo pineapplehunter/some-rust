@@ -9,25 +9,32 @@
 let
   riscv64 = pkgsCross.riscv64-embedded;
   latest-nightly = rust-bin.nightly.latest;
-  rust-bin' = latest-nightly.default.override {
+  rust-bin-nightly = latest-nightly.default.override {
     extensions = [ "rust-src" ];
   };
   rustPlatform = (makeRustPlatform {
-    rustc = rust-bin';
-    cargo = rust-bin';
+    rustc = rust-bin-nightly;
+    cargo = rust-bin-nightly;
   });
 in
 stdenv.mkDerivation rec {
   pname = "rust-bootloader";
   version = "0.1.0";
 
-  src = lib.cleanSource ./.;
+  src = lib.sources.sourceByRegex ./. [
+    "Cargo.*"
+    "src.*"
+    "riscv64-custom.json"
+    "Makefile"
+    ".cargo.*"
+    "linker.ld"
+  ];
 
-  nativeBuildInputs = [ rust-bin' rustPlatform.cargoSetupHook riscv64.stdenv.cc ];
+  nativeBuildInputs = [ rust-bin-nightly rustPlatform.cargoSetupHook riscv64.stdenv.cc ];
 
   cargoDeps = rustPlatform.fetchCargoTarball {
     inherit src;
-    hash = "sha256-0NDfxzftyWVWghdaC9I2ba9nT50xLUNxlzwOGDfUsr8=";
+    hash = "sha256-DUklIX6T3MIyjSoS4pPQArg4ek6HAXQKqg0WxN88Nk0=";
 
     buildPhase = ''
       runHook preBuild

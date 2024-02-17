@@ -7,6 +7,8 @@ use core::{
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
+use rust_riscv_benches::get_thread_count;
+
 static COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[inline(never)]
@@ -93,16 +95,5 @@ impl fmt::Write for IOPort {
             unsafe { (0x1000_0000 as *mut u32).write_volatile(c as u32) }
         }
         Ok(())
-    }
-}
-
-use core::panic::PanicInfo;
-
-use rust_riscv_benches::get_thread_count;
-
-#[panic_handler]
-fn _panic(_info: &PanicInfo) -> ! {
-    loop {
-        // unsafe { riscv::asm::wfi() };
     }
 }

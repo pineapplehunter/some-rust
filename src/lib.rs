@@ -1,15 +1,27 @@
 #![no_std]
+#![no_main]
+
+extern crate alloc;
 
 use core::{
     arch::{asm, global_asm},
+    ops::Sub,
+    panic::PanicInfo,
     ptr::{addr_of, addr_of_mut},
 };
 
+use embedded_alloc::Heap;
+
+use crate::linker::{HEAP_END, PROGRAM_END};
+
 pub mod delay;
 pub mod linker;
-#[cfg(feature = "uart_sifive_u")]
-#[path = "uart_sifive_u.rs"]
-pub mod uart;
+pub mod pxet;
+
+pub mod io;
+
+#[cfg(feature = "critical_section_mt")]
+mod critical_section;
 
 /// get thread id assuming `mhartid` is stored in `tp`
 #[inline(always)]
@@ -47,6 +59,9 @@ unsafe fn clear_bss() {
     }
 }
 
+#[global_allocator]
+static HEAP: Heap = Heap::empty();
+
 #[no_mangle]
 #[inline(never)]
 pub unsafe extern "C" fn init_rt(thread_id: usize) -> ! {
@@ -58,6 +73,11 @@ pub unsafe extern "C" fn init_rt(thread_id: usize) -> ! {
         let thread_count: usize;
         asm!("csrr {}, 0xCC0", out(reg) thread_count);
         addr_of_mut!(THREAD_COUNT).write_volatile(thread_count);
+
+        let heap_size = addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize;
+        let heap_addr = addr_of!(PROGRAM_END) as *mut u8;
+        unsafe { HEAP.init(heap_addr as usize, heap_size) }
+
         addr_of_mut!(RT_INIT_DONE).write_volatile(true);
     } else {
         while !addr_of!(RT_INIT_DONE).read_volatile() {
@@ -89,5 +109,48 @@ pub struct TrapFrame {
 extern "C" fn m_trap(frame: TrapFrame) {
     println!("TRAP!!!!");
     println!("{:#?}", frame);
-    loop {}
+    loop {
+        riscv::asm::nop();
+    }
+}
+
+#[panic_handler]
+fn _panic(info: &PanicInfo) -> ! {
+    print!("\n\n\n");
+    println!("NG: panic on thread {}", get_thread_id());
+    println!("{}", info);
+    loop {
+        riscv::asm::nop();
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Metrics {
+    cycle: usize,
+    instret: usize,
+}
+
+impl Sub for Metrics {
+    type Output = Metrics;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            cycle: self.cycle - rhs.cycle,
+            instret: self.instret - rhs.instret,
+        }
+    }
+}
+
+#[inline(never)]
+pub fn get_metrics<R, F: FnOnce() -> R>(f: F) -> (Metrics, R) {
+    let before = Metrics {
+        cycle: riscv::register::cycle::read(),
+        instret: riscv::register::instret::read(),
+    };
+    let r = f();
+    let after = Metrics {
+        cycle: riscv::register::cycle::read(),
+        instret: riscv::register::instret::read(),
+    };
+    (after - before, r)
 }

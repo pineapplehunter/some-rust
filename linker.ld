@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 MEMORY{
-	RAM (rwx): ORIGIN = 0x80000000, LENGTH = 256M
+	RAM (rwx): ORIGIN = 0x80000000 + 1M, LENGTH = 256M
 }
 
 SECTIONS{
@@ -21,15 +21,16 @@ SECTIONS{
 		*(.data .data*)
 		*(.sdata .sdata*)
 	} > RAM
-	.bss ALIGN(64) : {
+	.bss ALIGN(8) : {
 		PROVIDE(__BSS_START = .);
 		*(.bss .bss*)
 		*(.sbss .sbss*)
 		PROVIDE(__BSS_END = .);
 	} > RAM
 
-	. = ALIGN(64);
+	. = ALIGN(8);
 	PROVIDE(__PROGRAM_END = .);
+	PROVIDE(__HEAP_END = . + 16k);
 
 	/* PROVIDE(__UART_START = 0x10013000); */
 	PROVIDE(__UART_START = 0x10010000);

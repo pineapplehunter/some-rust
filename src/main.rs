@@ -1,16 +1,12 @@
 #![no_std]
 #![no_main]
 
-use core::fmt::Write;
 use core::mem::size_of;
-use core::panic::PanicInfo;
-use core::ptr::{addr_of, addr_of_mut, NonNull};
+use core::ptr::addr_of;
 use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
-use embedded_hal_nb::serial::Read;
 use linker::UART;
 use rust_riscv_benches::delay::delay;
-use rust_riscv_benches::{dbg, debug, get_thread_id, info, linker, println, uart};
-use uart::{Uart, UART0};
+use rust_riscv_benches::{dbg, debug, get_thread_id, info, linker, println};
 
 use crate::linker::{GPIO, PROGRAM_END, RAM};
 
@@ -27,9 +23,10 @@ fn show_program_info() {
 
 fn echo() {
     loop {
-        let Ok(b) = UART0.lock().read() else {
-            continue;
-        };
+        // let Ok(b) = UART0.lock().read() else {
+        //     continue;
+        // };
+        let b: u8 = 45;
         info!("received!", b as char);
         delay(1000);
     }
@@ -115,15 +112,4 @@ pub extern "C" fn main() {
         println!("init done");
         echo();
     }
-}
-
-#[panic_handler]
-fn _panic(info: &PanicInfo) -> ! {
-    let _uart = UART0.try_lock();
-    let mut uart = Uart::new(unsafe { NonNull::new_unchecked(addr_of_mut!(UART)) });
-    writeln!(uart).ok();
-    writeln!(uart).ok();
-    writeln!(uart, "!!!!! panic at thread {} !!!!!", get_thread_id()).ok();
-    writeln!(uart, "{}", info).ok();
-    loop {}
 }
