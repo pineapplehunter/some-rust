@@ -19,6 +19,7 @@ unsafe impl Impl for MultiHartCriticalSection {
 
     #[inline(never)]
     unsafe fn release(_: RawRestoreState) {
-        CRITICAL_SECTION_LOCK.store(false, Ordering::Relaxed);
+        let state = CRITICAL_SECTION_LOCK.swap(false, Ordering::Relaxed);
+        assert!(state, "critical section was broken");
     }
 }

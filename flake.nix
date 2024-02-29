@@ -15,7 +15,11 @@
       packages.x86_64-linux.default = pkgs.callPackage ./package.nix { };
 
       devShells.x86_64-linux.default = pkgs.mkShell {
-        packages = with pkgs;[ gnumake pkgsCross.riscv64-embedded.stdenv.cc ];
+        packages = with pkgs;[ 
+          gnumake 
+          pkgsCross.riscv64-embedded.stdenv.cc 
+          llvmPackages.bintools
+        ];
       };
 
       legacyPackages.x86_64-linux = pkgs;

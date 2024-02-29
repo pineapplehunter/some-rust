@@ -48,6 +48,10 @@ li x31,0
 2:
 .endm
 
+.macro init_reg i
+    li x&i, 0
+.endm
+
 .section .text.init
 .global _start
 _start:
@@ -84,6 +88,13 @@ _start:
 .macro load_fp i, basereg=t6
 	fld	f\i, ((NUM_GP_REGS+(\i))*REG_SIZE)(\basereg)
 .endm
+
+.global __delay
+__delay:
+    beqz a0, 0f
+    addi a0,a0,-1
+    j __delay
+0: ret
 
 .align 4
 .option norvc

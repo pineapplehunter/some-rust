@@ -3,26 +3,203 @@
 
 extern crate alloc;
 
-use core::ptr::addr_of;
+use core::ptr::addr_of_mut;
 
+use alloc::sync::Arc;
+use alloc::vec;
 use alloc::vec::Vec;
+use rust_riscv_benches::metrics::{get_metrics, Metrics, MetricsCSV};
+use rust_riscv_benches::pxet::structure::PextMat;
+use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{
-    linker::{HEAP_END, PROGRAM_END},
-    metrics::get_metrics,
-    println,
+    get_thread_count, println,
     pxet::{
         asm::{smul16, smul8},
         structure::PextVec,
     },
 };
 
+struct Matrix<T> {
+    inner: Vec<T>,
+    width: usize,
+    height: usize,
+}
+
+impl<T> Matrix<T> {
+    pub fn get_mut_at(&mut self, w: usize, h: usize) -> &mut T {
+        self.inner.get_mut(w + h * self.width).unwrap()
+    }
+
+    pub fn get_at(&self, w: usize, h: usize) -> &T {
+        self.inner.get(w + h * self.width).unwrap()
+    }
+
+    pub fn from_iter(width: usize, height: usize, iter: impl Iterator<Item = T>) -> Self {
+        Self {
+            inner: iter.take(width * height).collect(),
+            width,
+            height,
+        }
+    }
+}
+
+impl Matrix<i16> {
+    pub fn zeroed(width: usize, height: usize) -> Self {
+        Self {
+            inner: vec![0; width * height],
+            width,
+            height,
+        }
+    }
+}
+
+impl Matrix<i32> {
+    pub fn zeroed(width: usize, height: usize) -> Self {
+        Self {
+            inner: vec![0; width * height],
+            width,
+            height,
+        }
+    }
+}
+
 #[no_mangle]
 #[inline(never)]
-fn element_wise_mul_i16(a: &[i16], b: &[i16]) -> Vec<i32> {
-    a.iter()
-        .zip(b)
-        .map(|(a, b)| *a as i32 * *b as i32)
-        .collect()
+fn mat_mul_i16(a: &Matrix<i16>, b: &Matrix<i16>) -> Matrix<i32> {
+    assert_eq!(a.width, b.height);
+    let mut out = Matrix::<i32>::zeroed(b.width, a.height);
+    for h_idx in 0..a.height {
+        for w_idx in 0..b.width {
+            for k_idx in 0..a.width {
+                *out.get_mut_at(w_idx, h_idx) +=
+                    *a.get_at(k_idx, h_idx) as i32 * *b.get_at(w_idx, k_idx) as i32
+            }
+        }
+    }
+    out
+}
+
+#[no_mangle]
+// #[inline(never)]
+pub const fn transposei16_4x4(m: [usize; 4]) -> [usize; 4] {
+    let mut out = [0; 4];
+    out[0] = ((m[0] >> 00) & 0xFFFF << 00)
+        | ((m[1] >> 00) & 0xFFFF << 16)
+        | ((m[2] >> 00) & 0xFFFF << 32)
+        | ((m[3] >> 00) & 0xFFFF << 48);
+    out[1] = ((m[0] >> 16) & 0xFFFF << 00)
+        | ((m[1] >> 16) & 0xFFFF << 16)
+        | ((m[2] >> 16) & 0xFFFF << 32)
+        | ((m[3] >> 16) & 0xFFFF << 48);
+    out[2] = ((m[0] >> 32) & 0xFFFF << 00)
+        | ((m[1] >> 32) & 0xFFFF << 16)
+        | ((m[2] >> 32) & 0xFFFF << 32)
+        | ((m[3] >> 32) & 0xFFFF << 48);
+    out[3] = ((m[0] >> 48) & 0xFFFF << 00)
+        | ((m[1] >> 48) & 0xFFFF << 16)
+        | ((m[2] >> 48) & 0xFFFF << 32)
+        | ((m[3] >> 48) & 0xFFFF << 48);
+    out
+}
+
+#[no_mangle]
+// #[inline(never)]
+pub const fn transposei8_8x8(m: [usize; 8]) -> [usize; 8] {
+    let mut out = [0; 8];
+    out[0] = ((m[0] >> 00) & 0xFF << 00)
+        | ((m[1] >> 00) & 0xFF << 08)
+        | ((m[2] >> 00) & 0xFF << 16)
+        | ((m[3] >> 00) & 0xFF << 24)
+        | ((m[4] >> 00) & 0xFF << 32)
+        | ((m[5] >> 00) & 0xFF << 40)
+        | ((m[6] >> 00) & 0xFF << 48)
+        | ((m[7] >> 00) & 0xFF << 56);
+    out[1] = ((m[0] >> 08) & 0xFF << 00)
+        | ((m[1] >> 08) & 0xFF << 08)
+        | ((m[2] >> 08) & 0xFF << 16)
+        | ((m[3] >> 08) & 0xFF << 24)
+        | ((m[4] >> 08) & 0xFF << 32)
+        | ((m[5] >> 08) & 0xFF << 40)
+        | ((m[6] >> 08) & 0xFF << 48)
+        | ((m[7] >> 08) & 0xFF << 56);
+    out[2] = ((m[0] >> 16) & 0xFF << 00)
+        | ((m[1] >> 16) & 0xFF << 08)
+        | ((m[2] >> 16) & 0xFF << 16)
+        | ((m[3] >> 16) & 0xFF << 24)
+        | ((m[4] >> 16) & 0xFF << 32)
+        | ((m[5] >> 16) & 0xFF << 40)
+        | ((m[6] >> 16) & 0xFF << 48)
+        | ((m[7] >> 16) & 0xFF << 56);
+    out[3] = ((m[0] >> 24) & 0xFF << 00)
+        | ((m[1] >> 24) & 0xFF << 08)
+        | ((m[2] >> 24) & 0xFF << 16)
+        | ((m[3] >> 24) & 0xFF << 24)
+        | ((m[4] >> 24) & 0xFF << 32)
+        | ((m[5] >> 24) & 0xFF << 40)
+        | ((m[6] >> 24) & 0xFF << 48)
+        | ((m[7] >> 24) & 0xFF << 56);
+    out[4] = ((m[0] >> 32) & 0xFF << 00)
+        | ((m[1] >> 32) & 0xFF << 08)
+        | ((m[2] >> 32) & 0xFF << 16)
+        | ((m[3] >> 32) & 0xFF << 24)
+        | ((m[4] >> 32) & 0xFF << 32)
+        | ((m[5] >> 32) & 0xFF << 40)
+        | ((m[6] >> 32) & 0xFF << 48)
+        | ((m[7] >> 32) & 0xFF << 56);
+    out[5] = ((m[0] >> 40) & 0xFF << 00)
+        | ((m[1] >> 40) & 0xFF << 08)
+        | ((m[2] >> 40) & 0xFF << 16)
+        | ((m[3] >> 40) & 0xFF << 24)
+        | ((m[4] >> 40) & 0xFF << 32)
+        | ((m[5] >> 40) & 0xFF << 40)
+        | ((m[6] >> 40) & 0xFF << 48)
+        | ((m[7] >> 40) & 0xFF << 56);
+    out[6] = ((m[0] >> 48) & 0xFF << 00)
+        | ((m[1] >> 48) & 0xFF << 08)
+        | ((m[2] >> 48) & 0xFF << 16)
+        | ((m[3] >> 48) & 0xFF << 24)
+        | ((m[4] >> 48) & 0xFF << 32)
+        | ((m[5] >> 48) & 0xFF << 40)
+        | ((m[6] >> 48) & 0xFF << 48)
+        | ((m[7] >> 48) & 0xFF << 56);
+    out[7] = ((m[0] >> 56) & 0xFF << 00)
+        | ((m[1] >> 56) & 0xFF << 08)
+        | ((m[2] >> 56) & 0xFF << 16)
+        | ((m[3] >> 56) & 0xFF << 24)
+        | ((m[4] >> 56) & 0xFF << 32)
+        | ((m[5] >> 56) & 0xFF << 40)
+        | ((m[6] >> 56) & 0xFF << 48)
+        | ((m[7] >> 56) & 0xFF << 56);
+    out
+}
+
+#[no_mangle]
+#[inline(never)]
+fn mat_mul_i16_simd(a: &PextMat<i16>, b: &PextMat<i16>) -> PextMat<i32> {
+    assert_eq!(a.width, b.height);
+    let mut out = PextMat::<i32>::zeroed(b.width, a.height);
+    let out_alloc_width = out.alloc_width() * out.ratio();
+    let out_slice = unsafe { out.get_slice_mut_as_type() };
+    let a_slice = a.get_slice();
+    // let b_slice = b.get_slice();
+    for h_idx in 0..a.height {
+        for w_idx in 0..b.width {
+            for k_idx in (0..a.width).step_by(4) {
+                let a_part = a_slice[k_idx + h_idx * a.alloc_width()];
+                let b_part = ((*b.get_at(w_idx, k_idx) as usize) << 00)
+                    | ((*b.get_at(w_idx, k_idx + 1) as usize) << 16)
+                    | ((*b.get_at(w_idx, k_idx + 2) as usize) << 32)
+                    | ((*b.get_at(w_idx, k_idx + 3) as usize) << 48);
+                let mul_l = smul16(a_part, b_part);
+                let mul_h = smul16(a_part, b_part);
+                out_slice[w_idx + h_idx * out_alloc_width] += ((mul_l & 0xFFFF_FFFF) as i32)
+                    + (((mul_l >> 32) & 0xFFFF_FFFF) as i32)
+                    + ((mul_h & 0xFFFF_FFFF) as i32)
+                    + (((mul_h >> 32) & 0xFFFF_FFFF) as i32);
+            }
+        }
+    }
+    out
 }
 
 #[no_mangle]
@@ -211,63 +388,156 @@ static TEST_DATA_B_I8: &[i8] = &[
     26, -15, -16, -13, -31, 33, 42, 86, 25, 90, -53,
 ];
 
+fn i16_bench(size: usize, threads: usize) {
+    // get teady for threading
+    let mut handles = Vec::with_capacity(threads);
+    // this is totaly unsafe, so becareful to what index to use
+    let a = TEST_DATA_A_I16;
+    let b = TEST_DATA_B_I16;
+    let a_mat = Arc::new(Matrix::from_iter(size, size, a.iter().cloned()));
+    let b_mat = Arc::new(Matrix::from_iter(size, size, b.iter().cloned()));
+
+    let (normal_group_metric, normal_individual_metrics) = get_metrics(|| {
+        for _ in 0..threads {
+            let a_mat = a_mat.clone();
+            let b_mat = b_mat.clone();
+            let handle = spawn(move || get_metrics(|| mat_mul_i16(&a_mat, &b_mat)).0);
+            handles.push(handle);
+        }
+        event_loop_until_empty();
+        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        metrics
+    });
+
+    for m in normal_individual_metrics {
+        println!("i,16,{},normal,{}", threads, m.csv());
+    }
+
+    // pext array
+
+    // get teady for threading
+    let mut handles = Vec::with_capacity(threads);
+
+    let (pext_group_metric, pext_individual_metrics) = get_metrics(|| {
+        for _ in 0..threads {
+            let a = TEST_DATA_A_I16;
+            let b = TEST_DATA_B_I16;
+            let a_mat = PextMat::<i16>::from_iter(size, size, a.iter().cloned());
+            let b_mat = PextMat::<i16>::from_iter(size, size, b.iter().cloned());
+
+            let handle = spawn(move || get_metrics(|| mat_mul_i16_simd(&a_mat, &b_mat)).0);
+            handles.push(handle);
+        }
+        event_loop_until_empty();
+        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        metrics
+    });
+
+    for m in pext_individual_metrics {
+        println!("i,16,{},pext,{}", threads, m.csv());
+    }
+
+    println!();
+    println!("g,16,{},normal,{}", threads, normal_group_metric.csv());
+    println!("g,16,{},pext,{}", threads, pext_group_metric.csv());
+
+    println!()
+}
+fn i8_bench(tasks: usize, threads: usize) {
+    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I8));
+    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I8));
+
+    // get teady for threading
+    let mut handles = Vec::with_capacity(threads);
+
+    let (normal_group_metric, normal_individual_metrics) = get_metrics(|| {
+        for _ in 0..threads {
+            let handle = spawn(move || {
+                get_metrics(|| {
+                    for _ in 0..tasks {
+                        // this is totaly unsafe, so becareful to what index to use
+                        let a = TEST_DATA_A_I8;
+                        let b = TEST_DATA_B_I8;
+                        element_wise_mul_i8(a, b);
+                    }
+                })
+                .0
+            });
+            handles.push(handle);
+        }
+        event_loop_until_empty();
+        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        metrics
+    });
+
+    for m in normal_individual_metrics {
+        println!("i,8,{},normal,{}", threads, m.csv());
+    }
+
+    // pext array
+
+    // get teady for threading
+    let mut handles = Vec::with_capacity(threads);
+
+    let (pext_group_metric, pext_individual_metrics) = get_metrics(|| {
+        for _ in 0..threads {
+            let data_a = data_a.clone();
+            let data_b = data_b.clone();
+
+            let handle = spawn(move || {
+                get_metrics(|| {
+                    for _ in 0..tasks {
+                        element_wise_mul_i8_simd(&data_a, &data_b);
+                    }
+                })
+                .0
+            });
+            handles.push(handle);
+        }
+        event_loop_until_empty();
+        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        metrics
+    });
+
+    for m in pext_individual_metrics {
+        println!("i,8,{},pext,{}", threads, m.csv());
+    }
+
+    println!();
+    println!("g,8,{},normal,{}", threads, normal_group_metric.csv());
+    println!("g,8,{},pext,{}", threads, pext_group_metric.csv());
+
+    println!()
+}
+
+#[inline(never)]
+fn first_hart_entry() {
+    println!("B4SMT evaluation program");
+    println!("This program measures the performance difference of normal and pext multiplication of arrays.");
+    println!("START");
+
+    println!("i-g,elemnt,threads,type,{}", MetricsCSV::HEADER);
+    let thread_count = get_thread_count();
+    let tasks = 50;
+    for i in 1..=thread_count {
+        i16_bench(tasks, i);
+        i8_bench(tasks, i);
+    }
+
+    println!("END")
+}
+
+#[inline(never)]
+fn other_hart_entry() {
+    event_loop()
+}
+
 #[inline(never)]
 #[no_mangle]
 extern "C" fn main(thread_id: usize) {
-    if thread_id != 0 {
-        return;
-    }
-
-    println!("Rust on B4SMT");
-    unsafe {
-        println!(
-            "Heap from = {:?} to {:?} size = {}",
-            addr_of!(PROGRAM_END),
-            addr_of!(HEAP_END),
-            addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize
-        );
-    }
-
-    let (met, _) = get_metrics(|| ());
-    println!("sample metrics = {:?}", met);
-
-    // i16
-    let sample = PextVec::<u16>::from(&[1, 2, 3, 4, 5][..]);
-    println!("i16 sample = {:?}", sample);
-
-    let (cycle1, res1) = get_metrics(|| element_wise_mul_i16(TEST_DATA_A_I16, TEST_DATA_B_I16));
-
-    let a2 = PextVec::from(TEST_DATA_A_I16);
-    let b2 = PextVec::from(TEST_DATA_B_I16);
-    let (cycle2, res2) = get_metrics(|| element_wise_mul_i16_simd(&a2, &b2));
-
-    if res1.iter().zip(res2.iter()).all(|(&a, b)| a == b) {
-        println!("{} OK", thread_id);
-        println!("{} metric1={:?}", thread_id, cycle1);
-        println!("{} metric2={:?}", thread_id, cycle2);
+    if thread_id == 0 {
+        first_hart_entry()
     } else {
-        println!("{} NG", thread_id);
-        println!("{} res1 = {:?}", thread_id, res1);
-        println!("{} res2 = {:?}", thread_id, res2);
-    }
-
-    // i8
-    let sample = PextVec::<i8>::from(&[1, 2, 3, 4, 5, 6, 7, 8, 9][..]);
-    println!("i8  sample = {:?}", sample);
-
-    let (cycle1, res1) = get_metrics(|| element_wise_mul_i8(TEST_DATA_A_I8, TEST_DATA_B_I8));
-
-    let a2 = PextVec::from(TEST_DATA_A_I8);
-    let b2 = PextVec::from(TEST_DATA_B_I8);
-    let (cycle2, res2) = get_metrics(|| element_wise_mul_i8_simd(&a2, &b2));
-
-    if res1.iter().zip(res2.iter()).all(|(&a, b)| a == b) {
-        println!("{} OK", thread_id);
-        println!("{} metric1={:?}", thread_id, cycle1);
-        println!("{} metric2={:?}", thread_id, cycle2);
-    } else {
-        println!("{} NG", thread_id);
-        println!("{} res1 = {:?}", thread_id, res1);
-        println!("{} res2 = {:?}", thread_id, res2);
+        other_hart_entry()
     }
 }

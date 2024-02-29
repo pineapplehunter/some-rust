@@ -5,20 +5,25 @@ extern crate alloc;
 
 use core::{
     arch::{asm, global_asm},
-    ops::Sub,
     panic::PanicInfo,
-    ptr::{addr_of, addr_of_mut},
+    ptr::addr_of,
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
-use embedded_alloc::Heap;
-
-use crate::linker::{HEAP_END, PROGRAM_END};
+use crate::heap::CustomLockedHeap;
+use crate::{
+    io::{ioport::IOPort, MAIN_OUTPUT},
+    linker::{HEAP_END, PROGRAM_END},
+};
 
 pub mod delay;
-pub mod linker;
-pub mod pxet;
-
+pub mod heap;
 pub mod io;
+pub mod linker;
+pub mod metrics;
+pub mod pxet;
+pub mod sync;
+pub mod thread;
 
 #[cfg(feature = "critical_section_mt")]
 mod critical_section;
@@ -31,15 +36,13 @@ pub fn get_thread_id() -> usize {
     thread_id
 }
 
-pub static mut THREAD_COUNT: usize = 0;
-pub static mut RT_INIT_DONE: bool = false;
+pub static THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
+pub static RT_INIT_DONE: AtomicBool = AtomicBool::new(false);
 
 #[inline(always)]
 pub fn get_thread_count() -> usize {
-    unsafe {
-        debug_assert!(addr_of!(RT_INIT_DONE).read_volatile());
-        THREAD_COUNT
-    }
+    debug_assert!(RT_INIT_DONE.load(Ordering::Relaxed));
+    THREAD_COUNT.load(Ordering::Relaxed)
 }
 
 extern "C" {
@@ -60,28 +63,30 @@ unsafe fn clear_bss() {
 }
 
 #[global_allocator]
-static HEAP: Heap = Heap::empty();
+static HEAP: CustomLockedHeap = CustomLockedHeap::empty();
 
+/// # Safety
+/// this will only be called from asm
 #[no_mangle]
 #[inline(never)]
 pub unsafe extern "C" fn init_rt(thread_id: usize) -> ! {
     // DON'T ASSUME BSS IS 0 AT THIS POINT!!!!
-    addr_of_mut!(RT_INIT_DONE).write(false);
+    RT_INIT_DONE.store(false, Ordering::SeqCst);
     if thread_id == 0 {
         unsafe { clear_bss() };
 
         let thread_count: usize;
         asm!("csrr {}, 0xCC0", out(reg) thread_count);
-        addr_of_mut!(THREAD_COUNT).write_volatile(thread_count);
+        THREAD_COUNT.store(thread_count, Ordering::Relaxed);
 
         let heap_size = addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize;
         let heap_addr = addr_of!(PROGRAM_END) as *mut u8;
-        unsafe { HEAP.init(heap_addr as usize, heap_size) }
+        unsafe { HEAP.lock().init(heap_addr, heap_size) }
 
-        addr_of_mut!(RT_INIT_DONE).write_volatile(true);
+        RT_INIT_DONE.store(true, Ordering::Relaxed);
     } else {
-        while !addr_of!(RT_INIT_DONE).read_volatile() {
-            delay::delay(10);
+        while RT_INIT_DONE.load(Ordering::SeqCst) {
+            riscv::asm::nop()
         }
     }
     // JUMP TO MAIN!!!
@@ -116,41 +121,14 @@ extern "C" fn m_trap(frame: TrapFrame) {
 
 #[panic_handler]
 fn _panic(info: &PanicInfo) -> ! {
-    print!("\n\n\n");
-    println!("NG: panic on thread {}", get_thread_id());
-    println!("{}", info);
+    use core::fmt::Write;
+    MAIN_OUTPUT.try_lock();
+    let mut out = IOPort;
+
+    write!(out, "\n\n\n").ok();
+    writeln!(out, "NG: panic on thread {}", get_thread_id()).ok();
+    writeln!(out, "{}", info).ok();
     loop {
         riscv::asm::nop();
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Metrics {
-    cycle: usize,
-    instret: usize,
-}
-
-impl Sub for Metrics {
-    type Output = Metrics;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            cycle: self.cycle - rhs.cycle,
-            instret: self.instret - rhs.instret,
-        }
-    }
-}
-
-#[inline(never)]
-pub fn get_metrics<R, F: FnOnce() -> R>(f: F) -> (Metrics, R) {
-    let before = Metrics {
-        cycle: riscv::register::cycle::read(),
-        instret: riscv::register::instret::read(),
-    };
-    let r = f();
-    let after = Metrics {
-        cycle: riscv::register::cycle::read(),
-        instret: riscv::register::instret::read(),
-    };
-    (after - before, r)
 }

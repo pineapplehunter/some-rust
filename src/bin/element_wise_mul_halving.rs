@@ -7,8 +7,8 @@ use core::ptr::addr_of;
 
 use alloc::vec::Vec;
 use rust_riscv_benches::{
-    get_metrics,
     linker::{HEAP_END, PROGRAM_END},
+    metrics::get_metrics,
     println,
     pxet::{
         asm::{khm16, khm8},

@@ -1,11 +1,15 @@
 RISCV_PREFIX = riscv64-none-elf-
 OBJCOPY = $(RISCV_PREFIX)objcopy
-OBJDUMP = $(RISCV_PREFIX)objdump
+OBJDUMP = llvm-objdump
 RUST_TARGET := output/rust-riscv-benches
 RUST_TARGET_OTHERS := output/bench \
 						output/inner_product \
 						output/element_wise_mul \
-						output/element_wise_mul_halving
+						output/element_wise_mul_halving \
+						output/element_wise_mul_mt \
+						output/element_wise_mul_mt_same \
+						output/mat_mul_mt_same \
+						output/mt_many_tasks
 RUST_SOURCES := $(shell find src -type f) Cargo.lock Cargo.toml linker.ld riscv64-custom.json
 
 OUTPUT_HEX = $(addsuffix .hex,$(RUST_TARGET_OTHERS))
@@ -28,7 +32,7 @@ output/loader: $(RUST_TARGET)
 	cp $< $@
 
 %.dump: %
-	$(OBJDUMP) $< -d -j .text -j .rodata -j .data -j .bss -C > $@
+	$(OBJDUMP) $< -d -j .text -j .rodata -j .data -j .bss -C -S > $@
 
 %.bin: %
 	$(OBJCOPY) -O binary $< $@

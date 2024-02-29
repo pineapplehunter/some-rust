@@ -18,6 +18,7 @@ macro_rules! print {
 /// print a string followed by a new line
 #[macro_export]
 macro_rules! println {
+    () => (println!(""));
     ($fmt:expr) => ($crate::print!(concat!($fmt, "\n")));
     ($fmt:expr, $($arg:tt)*) => ($crate::print!(concat!($fmt, "\n"), $($arg)*));
 }
@@ -26,12 +27,20 @@ macro_rules! println {
 #[macro_export]
 macro_rules! dbg {
     () => {{
-        debug!();
+        $crate::debug!();
     }};
+    ($name:literal = $val:expr $(,)?) => {
+        match $val {
+            tmp => {
+                $crate::debug!(concat!(stringify!($name)," ="), &tmp);
+                tmp
+            }
+        }
+    };
     ($val:expr $(,)?) => {
         match $val {
             tmp => {
-                debug!(concat!(stringify!($val)," ="), &tmp);
+                $crate::debug!(concat!(stringify!($val)," ="), &tmp);
                 tmp
             }
         }

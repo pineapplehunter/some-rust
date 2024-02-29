@@ -5,31 +5,28 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-critical-section = "1.1.2"
-embedded-alloc = { version = "0.5.1", features = ["allocator_api"] }
+critical-section = {version = "1.1.2", optional = true}
 embedded-hal-nb = "1.0.0"
 heapless = "0.8.0"
+linked_list_allocator = "0.10.5"
 nb = "1.0.0"
 riscv = "0.11.0"
-spin = { version = "0.9.8", default-features = false, features = ["lazy", "spin_mutex"] }
+# spin = { version = "0.9.8", default-features = false, features = ["lazy","use_ticket_mutex", "rwlock"] }
+# spin = { version = "0.9.8", default-features = false, features = [ "spin_mutex", "rwlock" ] }
 static_assertions = "1.1.0"
 volatile = "0.5.1"
 
-[build-dependencies]
-cc = "1.0.77"
-
 [profile.release]
 # opt-level=3
-lto = true
+# lto = true
 
 #overflow-checks = true
 #debug-assertions = true
 [features]
-default = ["unicode", "b4smt", "critical_section_mt"]
+default = [ "b4smt" ]
 unicode = []
 uart_sifive_u = []
-large_bss = [] # makes clearing bss a little faster. not tested.
-critical_section_mt = []
+critical_section_mt = ["critical-section"]
 b4smt = []
 
 [dev-dependencies]

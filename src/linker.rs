@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 extern "C" {
     #[link_name = "__UART_START"]
-    pub static mut UART: u8;
+    pub static UART: u8;
     #[link_name = "__GPIO_START"]
     pub static GPIO: u32;
     #[link_name = "__RAM_START"]

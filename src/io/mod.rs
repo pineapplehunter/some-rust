@@ -1,4 +1,4 @@
-use spin::Mutex;
+use crate::sync::Mutex;
 
 #[cfg(feature = "uart_sifive_u")]
 #[path = "uart_sifive_u.rs"]
