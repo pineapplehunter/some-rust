@@ -1,6 +1,7 @@
 RISCV_PREFIX = riscv64-none-elf-
 OBJCOPY = $(RISCV_PREFIX)objcopy
-OBJDUMP = llvm-objdump
+OBJDUMP = $(RISCV_PREFIX)objdump
+# OBJDUMP = llvm-objdump
 RUST_TARGET := output/rust-riscv-benches
 RUST_TARGET_OTHERS := output/bench \
 						output/inner_product \
@@ -32,7 +33,7 @@ output/loader: $(RUST_TARGET)
 	cp $< $@
 
 %.dump: %
-	$(OBJDUMP) $< -d -j .text -j .rodata -j .data -j .bss -C -S > $@
+	$(OBJDUMP) $< -d -j .text -j .rodata -j .data -j .bss -C -S -M numeric > $@
 
 %.bin: %
 	$(OBJCOPY) -O binary $< $@

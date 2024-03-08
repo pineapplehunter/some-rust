@@ -83,7 +83,7 @@ pub unsafe extern "C" fn init_rt(thread_id: usize) -> ! {
         let heap_addr = addr_of!(PROGRAM_END) as *mut u8;
         unsafe { HEAP.lock().init(heap_addr, heap_size) }
 
-        RT_INIT_DONE.store(true, Ordering::Relaxed);
+        RT_INIT_DONE.swap(true, Ordering::Relaxed);
     } else {
         while RT_INIT_DONE.load(Ordering::SeqCst) {
             riscv::asm::nop()
@@ -119,6 +119,7 @@ extern "C" fn m_trap(frame: TrapFrame) {
     }
 }
 
+#[inline(never)]
 #[panic_handler]
 fn _panic(info: &PanicInfo) -> ! {
     use core::fmt::Write;

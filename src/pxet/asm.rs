@@ -35,3 +35,19 @@ pub fn smul8(a: usize, b: usize) -> usize {
     };
     out
 }
+
+#[inline(always)]
+pub fn smalbb(mut acc: usize, a: usize, b: usize) -> usize {
+    unsafe {
+        asm!(".insn r 0b1110111, 0b001, 0b1000100, {out}, {in1}, {in2}", out = inout(reg)acc, in1 = in(reg)a, in2= in(reg)b)
+    };
+    acc
+}
+
+#[inline(always)]
+pub fn smaltt(mut acc: usize, a: usize, b: usize) -> usize {
+    unsafe {
+        asm!(".insn r 0b1110111, 0b001, 0b1010100, {out}, {in1}, {in2}", out = inout(reg)acc, in1 = in(reg)a, in2= in(reg)b)
+    };
+    acc
+}

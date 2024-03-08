@@ -5,9 +5,9 @@ extern crate alloc;
 
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use alloc::{task, vec};
+
 use rust_riscv_benches::metrics::{get_metrics, Metrics, MetricsCSV};
-use rust_riscv_benches::sync::UnsafeSyncCell;
+
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{
     get_thread_count, println,
@@ -347,7 +347,7 @@ fn i8_bench(tasks: usize, threads: usize) {
 #[inline(never)]
 fn first_hart_entry() {
     println!("B4SMT evaluation program");
-    println!("This program measures the performance difference of normal and pext multiplication of arrays.");
+    println!("This program measures the performance difference of normal and pext matrix multiplication.");
     println!("START");
 
     println!("i-g,elemnt,threads,type,{}", MetricsCSV::HEADER);

@@ -1,8 +1,8 @@
+use core::fmt;
 use core::marker::PhantomData;
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::ptr;
 
 #[derive(Default, Clone)]
 pub struct PextVec<T> {
@@ -211,12 +211,17 @@ macro_rules! gen_PextVecType {
                 }
             }
 
+            #[inline(always)]
             pub fn alloc_width(&self) -> usize {
                 ((self.width - 1) / Self::RATIO + 1)
             }
 
             /// initialize mat from iterator
-            pub fn from_iter(width: usize, height: usize, mut iter: impl Iterator<Item = $t>) -> Self {
+            pub fn from_iter(
+                width: usize,
+                height: usize,
+                mut iter: impl Iterator<Item = $t>,
+            ) -> Self {
                 let mut m = Self::zeroed(width, height);
 
                 let alloc_width = m.alloc_width();
@@ -234,32 +239,35 @@ macro_rules! gen_PextVecType {
                 m
             }
 
-            pub fn get_at(&self, w: usize, h: usize) -> &$t {
+            #[inline(always)]
+            pub fn get_at(&self, w: usize, h: usize) -> $t {
                 unsafe {
-                    &*((self
-                        .inner
-                        .get_unchecked(w / Self::RATIO + h * self.alloc_width())
-                        as *const usize) as *const $t)
-                        .add(w % Self::RATIO)
+                    *((self.inner.as_slice().as_ptr() as *const usize as *const $t)
+                        .add(w + h * self.alloc_width() * Self::RATIO))
                 }
             }
 
-            pub fn get_col_of_ratio(&self, w: usize, h: usize) -> usize {
-                assert_eq!(h % Self::RATIO, 0);
-                let mut out = 0;
-                for i in 0..Self::RATIO {
-                    let t = unsafe {
-                        *((self
-                            .inner
-                            .get_unchecked(w / Self::RATIO + h * self.alloc_width())
-                            as *const usize) as *const $t)
-                            .add(w % Self::RATIO)
-                    };
-                    out |= (t as $align as usize) << (i * Self::DATA_SIZE * 8);
+            #[inline(always)]
+            pub fn get_col_at(&self, w: usize, h: usize) -> usize {
+                // assert_eq!(h % Self::RATIO, 0);
+                let next_width = self.alloc_width() * Self::RATIO;
+                unsafe {
+                    let ptr = ((self.inner.as_slice().as_ptr() as *const usize as *const $t)
+                        .add(w + h * self.alloc_width() * Self::RATIO));
+                    let a = (*ptr as usize & ((1 << (Self::DATA_SIZE * 8)) - 1))
+                        | ((*ptr.add(next_width) as usize & ((1 << (Self::DATA_SIZE * 8)) - 1))
+                            << 16)
+                        | ((*ptr.add(next_width * 2) as usize
+                            & ((1 << (Self::DATA_SIZE * 8)) - 1))
+                            << 32)
+                        | ((*ptr.add(next_width * 3) as usize
+                            & ((1 << (Self::DATA_SIZE * 8)) - 1))
+                            << 48);
+                    a
                 }
-                out
             }
 
+            #[inline(always)]
             pub unsafe fn get_slice_mut_as_type(&mut self) -> &mut [$t] {
                 &mut *core::ptr::slice_from_raw_parts_mut(
                     self.inner.as_mut_slice().as_ptr() as *mut usize as *mut $t,
@@ -271,6 +279,19 @@ macro_rules! gen_PextVecType {
                 Self::RATIO
             }
         }
+
+        impl fmt::Debug for PextMat<$t> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                writeln!(f, "Matrix {}x{}", self.width, self.height)?;
+                for h in 0..self.height {
+                    for w in 0..self.width {
+                        write!(f, "{} ", self.get_at(w, h))?;
+                    }
+                    writeln!(f)?;
+                }
+                Ok(())
+            }
+        }
     };
 }
 
@@ -280,3 +301,93 @@ gen_PextVecType!(u8, u8, u16);
 gen_PextVecType!(i32, u32, i64);
 gen_PextVecType!(i16, u16, i32);
 gen_PextVecType!(i8, u8, i16);
+
+pub const fn transposei16_4x4(m: [usize; 4]) -> [usize; 4] {
+    let mut out = [0; 4];
+    out[0] = ((m[0] >> 00) & 0xFFFF << 00)
+        | ((m[1] >> 00) & 0xFFFF << 16)
+        | ((m[2] >> 00) & 0xFFFF << 32)
+        | ((m[3] >> 00) & 0xFFFF << 48);
+    out[1] = ((m[0] >> 16) & 0xFFFF << 00)
+        | ((m[1] >> 16) & 0xFFFF << 16)
+        | ((m[2] >> 16) & 0xFFFF << 32)
+        | ((m[3] >> 16) & 0xFFFF << 48);
+    out[2] = ((m[0] >> 32) & 0xFFFF << 00)
+        | ((m[1] >> 32) & 0xFFFF << 16)
+        | ((m[2] >> 32) & 0xFFFF << 32)
+        | ((m[3] >> 32) & 0xFFFF << 48);
+    out[3] = ((m[0] >> 48) & 0xFFFF << 00)
+        | ((m[1] >> 48) & 0xFFFF << 16)
+        | ((m[2] >> 48) & 0xFFFF << 32)
+        | ((m[3] >> 48) & 0xFFFF << 48);
+    out
+}
+
+pub const fn transposei8_8x8(m: [usize; 8]) -> [usize; 8] {
+    let mut out = [0; 8];
+    out[0] = ((m[0] >> 00) & 0xFF << 00)
+        | ((m[1] >> 00) & 0xFF << 08)
+        | ((m[2] >> 00) & 0xFF << 16)
+        | ((m[3] >> 00) & 0xFF << 24)
+        | ((m[4] >> 00) & 0xFF << 32)
+        | ((m[5] >> 00) & 0xFF << 40)
+        | ((m[6] >> 00) & 0xFF << 48)
+        | ((m[7] >> 00) & 0xFF << 56);
+    out[1] = ((m[0] >> 08) & 0xFF << 00)
+        | ((m[1] >> 08) & 0xFF << 08)
+        | ((m[2] >> 08) & 0xFF << 16)
+        | ((m[3] >> 08) & 0xFF << 24)
+        | ((m[4] >> 08) & 0xFF << 32)
+        | ((m[5] >> 08) & 0xFF << 40)
+        | ((m[6] >> 08) & 0xFF << 48)
+        | ((m[7] >> 08) & 0xFF << 56);
+    out[2] = ((m[0] >> 16) & 0xFF << 00)
+        | ((m[1] >> 16) & 0xFF << 08)
+        | ((m[2] >> 16) & 0xFF << 16)
+        | ((m[3] >> 16) & 0xFF << 24)
+        | ((m[4] >> 16) & 0xFF << 32)
+        | ((m[5] >> 16) & 0xFF << 40)
+        | ((m[6] >> 16) & 0xFF << 48)
+        | ((m[7] >> 16) & 0xFF << 56);
+    out[3] = ((m[0] >> 24) & 0xFF << 00)
+        | ((m[1] >> 24) & 0xFF << 08)
+        | ((m[2] >> 24) & 0xFF << 16)
+        | ((m[3] >> 24) & 0xFF << 24)
+        | ((m[4] >> 24) & 0xFF << 32)
+        | ((m[5] >> 24) & 0xFF << 40)
+        | ((m[6] >> 24) & 0xFF << 48)
+        | ((m[7] >> 24) & 0xFF << 56);
+    out[4] = ((m[0] >> 32) & 0xFF << 00)
+        | ((m[1] >> 32) & 0xFF << 08)
+        | ((m[2] >> 32) & 0xFF << 16)
+        | ((m[3] >> 32) & 0xFF << 24)
+        | ((m[4] >> 32) & 0xFF << 32)
+        | ((m[5] >> 32) & 0xFF << 40)
+        | ((m[6] >> 32) & 0xFF << 48)
+        | ((m[7] >> 32) & 0xFF << 56);
+    out[5] = ((m[0] >> 40) & 0xFF << 00)
+        | ((m[1] >> 40) & 0xFF << 08)
+        | ((m[2] >> 40) & 0xFF << 16)
+        | ((m[3] >> 40) & 0xFF << 24)
+        | ((m[4] >> 40) & 0xFF << 32)
+        | ((m[5] >> 40) & 0xFF << 40)
+        | ((m[6] >> 40) & 0xFF << 48)
+        | ((m[7] >> 40) & 0xFF << 56);
+    out[6] = ((m[0] >> 48) & 0xFF << 00)
+        | ((m[1] >> 48) & 0xFF << 08)
+        | ((m[2] >> 48) & 0xFF << 16)
+        | ((m[3] >> 48) & 0xFF << 24)
+        | ((m[4] >> 48) & 0xFF << 32)
+        | ((m[5] >> 48) & 0xFF << 40)
+        | ((m[6] >> 48) & 0xFF << 48)
+        | ((m[7] >> 48) & 0xFF << 56);
+    out[7] = ((m[0] >> 56) & 0xFF << 00)
+        | ((m[1] >> 56) & 0xFF << 08)
+        | ((m[2] >> 56) & 0xFF << 16)
+        | ((m[3] >> 56) & 0xFF << 24)
+        | ((m[4] >> 56) & 0xFF << 32)
+        | ((m[5] >> 56) & 0xFF << 40)
+        | ((m[6] >> 56) & 0xFF << 48)
+        | ((m[7] >> 56) & 0xFF << 56);
+    out
+}
