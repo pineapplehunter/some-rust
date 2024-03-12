@@ -9,7 +9,7 @@ use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use rust_riscv_benches::metrics::{get_metrics, Metrics, MetricsCSV};
-use rust_riscv_benches::pxet::asm::{khm16, smalbb, smaltt};
+use rust_riscv_benches::pxet::asm::{smalbb, smaltt};
 use rust_riscv_benches::pxet::structure::PextMat;
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{get_thread_count, println, pxet::asm::smul16};
@@ -465,8 +465,7 @@ fn i16_bench(size: usize, threads: usize) {
     // pext array
 
     // get teady for threading
-    let mut handles: Vec<rust_riscv_benches::thread::TaskHandle<Metrics>> =
-        Vec::with_capacity(threads);
+    let mut handles: Vec<_> = Vec::with_capacity(threads);
 
     let a = TEST_DATA_A_I16;
     let b = TEST_DATA_B_I16;
@@ -487,7 +486,7 @@ fn i16_bench(size: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
@@ -495,8 +494,7 @@ fn i16_bench(size: usize, threads: usize) {
         println!("i,16,{},smul16,{}", threads, m.csv());
     }
 
-    let mut handles: Vec<rust_riscv_benches::thread::TaskHandle<Metrics>> =
-        Vec::with_capacity(threads);
+    let mut handles: Vec<_> = Vec::with_capacity(threads);
 
     let (smal_group_metrics, smal_individual_metrics) = get_metrics(|| {
         for _ in 0..threads {
@@ -512,7 +510,7 @@ fn i16_bench(size: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
@@ -520,8 +518,7 @@ fn i16_bench(size: usize, threads: usize) {
         println!("i,16,{},smal,{}", threads, m.csv());
     }
 
-    let mut handles: Vec<rust_riscv_benches::thread::TaskHandle<Metrics>> =
-        Vec::with_capacity(threads);
+    let mut handles: Vec<_> = Vec::with_capacity(threads);
 
     let (smal_t_group_metrics, smal_t_individual_metrics) = get_metrics(|| {
         for _ in 0..threads {
@@ -537,7 +534,7 @@ fn i16_bench(size: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
@@ -627,10 +624,13 @@ fn i16_bench(size: usize, threads: usize) {
 #[inline(never)]
 fn first_hart_entry() {
     println!("B4SMT evaluation program");
-    println!("This program measures the performance difference of normal and pext multiplication of arrays.");
+    println!("This program measures the performance difference of normal and pext matrix multiplication of arrays.");
     println!("START");
 
-    println!("i-g,elemnt,threads,type,{}", MetricsCSV::HEADER);
+    println!(
+        "individual-group,elemnt,threads,type,{}",
+        MetricsCSV::HEADER
+    );
     let thread_count = get_thread_count();
     let size = 32;
     for i in (1..=thread_count).rev() {

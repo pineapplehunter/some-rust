@@ -6,7 +6,7 @@ extern crate alloc;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 
-use rust_riscv_benches::metrics::{get_metrics, Metrics, MetricsCSV};
+use rust_riscv_benches::metrics::{get_metrics, MetricsCSV};
 
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{
@@ -234,7 +234,7 @@ fn i16_bench(tasks: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
@@ -263,7 +263,7 @@ fn i16_bench(tasks: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
@@ -300,7 +300,7 @@ fn i8_bench(tasks: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
@@ -329,7 +329,7 @@ fn i8_bench(tasks: usize, threads: usize) {
             handles.push(handle);
         }
         event_loop_until_empty();
-        let metrics: Vec<Metrics> = handles.into_iter().map(|h| *h.join()).collect();
+        let metrics: Vec<_> = handles.into_iter().map(|h| *h.join()).collect();
         metrics
     });
 
