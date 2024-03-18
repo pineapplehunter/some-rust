@@ -18,7 +18,7 @@ let
   });
 in
 stdenv.mkDerivation rec {
-  pname = "rust-bootloader";
+  pname = "rust-test-programs";
   version = "0.1.0";
 
   src = lib.sources.sourceByRegex ./. [
@@ -28,13 +28,14 @@ stdenv.mkDerivation rec {
     "Makefile"
     ".cargo.*"
     "linker.ld"
+    "build.rs"
   ];
 
   nativeBuildInputs = [ rust-bin-nightly rustPlatform.cargoSetupHook riscv64.stdenv.cc ];
 
   cargoDeps = rustPlatform.fetchCargoTarball {
     inherit src;
-    hash = "sha256-DUklIX6T3MIyjSoS4pPQArg4ek6HAXQKqg0WxN88Nk0=";
+    hash = "sha256-2wTwDGM1WaPTu0mHN8rhBgvtj65VtIzOFrLydX8XaQ8=";
 
     buildPhase = ''
       runHook preBuild

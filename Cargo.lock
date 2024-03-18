@@ -98,10 +98,8 @@ dependencies = [
  "embedded-hal-nb",
  "heapless",
  "linked_list_allocator",
- "nb",
  "riscv",
  "static_assertions",
- "volatile",
 ]
 
 [[package]]
@@ -130,9 +128,3 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "volatile"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9eaac9f9d9b7ae00cdd43e21b15e58ccacd903e6d29131d7536765a61969d25e"

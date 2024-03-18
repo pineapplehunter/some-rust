@@ -9,16 +9,12 @@ critical-section = {version = "1.1.2", optional = true}
 embedded-hal-nb = "1.0.0"
 heapless = "0.8.0"
 linked_list_allocator = "0.10.5"
-nb = "1.0.0"
 riscv = "0.11.0"
-# spin = { version = "0.9.8", default-features = false, features = ["lazy","use_ticket_mutex", "rwlock"] }
-# spin = { version = "0.9.8", default-features = false, features = [ "spin_mutex", "rwlock" ] }
 static_assertions = "1.1.0"
-volatile = "0.5.1"
 
 [profile.release]
 # opt-level=3
-# lto = true
+lto = true
 
 #overflow-checks = true
 #debug-assertions = true
