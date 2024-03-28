@@ -41,11 +41,11 @@ pub static RT_INIT_DONE: AtomicBool = AtomicBool::new(false);
 
 #[inline(always)]
 pub fn get_thread_count() -> usize {
-    debug_assert!(RT_INIT_DONE.load(Ordering::Relaxed));
-    THREAD_COUNT.load(Ordering::Relaxed)
+    debug_assert!(RT_INIT_DONE.fetch_or(false, Ordering::Relaxed));
+    THREAD_COUNT.fetch_or(0, Ordering::Relaxed)
 }
 
-extern "C" {
+extern "Rust" {
     fn main(thread_id: usize);
 }
 

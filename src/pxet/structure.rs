@@ -81,6 +81,53 @@ impl<T> PextMat<T> {
     }
 }
 
+pub struct Matrix<T> {
+    pub inner: Vec<T>,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl<T> Matrix<T> {
+    pub fn get_mut_at(&mut self, w: usize, h: usize) -> Option<&mut T> {
+        self.inner.get_mut(w + h * self.width)
+    }
+
+    pub fn get_at(&self, w: usize, h: usize) -> Option<&T> {
+        self.inner.get(w + h * self.width)
+    }
+
+    pub fn from_iter(width: usize, height: usize, iter: impl Iterator<Item = T>) -> Self {
+        Self {
+            inner: iter.take(width * height).collect(),
+            width,
+            height,
+        }
+    }
+}
+
+// impl Matrix<i16> {
+//     pub fn zeroed(width: usize, height: usize) -> Self {
+//         Self {
+//             inner: vec![0; width * height],
+//             width,
+//             height,
+//         }
+//     }
+// }
+
+impl<T: fmt::Display> fmt::Debug for Matrix<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Matrix {}x{}", self.width, self.height)?;
+        for h in 0..self.height {
+            for w in 0..self.width {
+                write!(f, "{} ", self.get_at(w, h).unwrap())?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 macro_rules! gen_PextVecType {
     ($t:ty, $align:ty, $next_up:ty) => {
         impl PextVec<$t> {
@@ -278,6 +325,18 @@ macro_rules! gen_PextVecType {
             pub fn ratio(&self) -> usize {
                 Self::RATIO
             }
+
+            pub fn to_matrix(&self) -> Matrix<$t> {
+                let mut m = Matrix::<$t>::zeroed(self.width, self.height);
+                let self_ptr = self.inner.as_slice().as_ptr() as *mut usize as *mut $t;
+                for w in 0..self.width {
+                    for h in 0..self.height {
+                        *m.get_mut_at(w, h).expect("no value on index?") =
+                            unsafe { *self_ptr.add(w + h * self.alloc_width() * Self::RATIO) };
+                    }
+                }
+                m
+            }
         }
 
         impl fmt::Debug for PextMat<$t> {
@@ -290,6 +349,16 @@ macro_rules! gen_PextVecType {
                     writeln!(f)?;
                 }
                 Ok(())
+            }
+        }
+
+        impl Matrix<$t> {
+            pub fn zeroed(width: usize, height: usize) -> Self {
+                Self {
+                    inner: vec![0; width * height],
+                    width,
+                    height,
+                }
             }
         }
     };
