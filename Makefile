@@ -10,7 +10,8 @@ RUST_TARGET_OTHERS := output/bench \
 						output/element_wise_mul_mt \
 						output/element_wise_mul_mt_same \
 						output/mat_mul_mt_same \
-						output/mt_many_tasks
+						output/mt_many_tasks \
+						output/median
 RUST_SOURCES := $(shell find src -type f) Cargo.lock Cargo.toml linker.ld riscv64-custom.json
 
 OUTPUT_HEX = $(addsuffix .hex,$(RUST_TARGET_OTHERS))

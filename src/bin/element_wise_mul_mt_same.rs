@@ -212,8 +212,8 @@ static TEST_DATA_B_I8: &[i8] = &[
 ];
 
 fn i16_bench(tasks: usize, threads: usize) {
-    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I16));
-    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I16));
+    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I16.iter().cloned()));
+    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I16.iter().cloned()));
 
     // get teady for threading
     let mut handles = Vec::with_capacity(threads);
@@ -278,8 +278,8 @@ fn i16_bench(tasks: usize, threads: usize) {
     println!()
 }
 fn i8_bench(tasks: usize, threads: usize) {
-    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I8));
-    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I8));
+    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I8.iter().cloned()));
+    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I8.iter().cloned()));
 
     // get teady for threading
     let mut handles = Vec::with_capacity(threads);

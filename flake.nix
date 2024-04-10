@@ -18,7 +18,6 @@
         packages = with pkgs;[ 
           gnumake 
           pkgsCross.riscv64-embedded.stdenv.cc 
-          llvmPackages.bintools
         ];
       };
 

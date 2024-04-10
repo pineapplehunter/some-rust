@@ -214,16 +214,6 @@ macro_rules! gen_PextVecType {
             }
         }
 
-        impl From<&[$t]> for PextVec<$t> {
-            fn from(data: &[$t]) -> Self {
-                let mut out = Self::new();
-                for e in data {
-                    out.push(*e);
-                }
-                out
-            }
-        }
-
         impl From<PextVec<$t>> for Vec<$t> {
             fn from(data: PextVec<$t>) -> Self {
                 let mut out = Self::new();
@@ -236,6 +226,16 @@ macro_rules! gen_PextVecType {
                 }
                 while out.len() != data.len() {
                     out.pop();
+                }
+                out
+            }
+        }
+
+        impl<I: Iterator<Item = $t>> From<I> for PextVec<$t> {
+            fn from(data: I) -> Self {
+                let mut out = Self::new();
+                for e in data {
+                    out.push(e);
                 }
                 out
             }

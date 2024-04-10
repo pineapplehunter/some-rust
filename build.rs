@@ -1,4 +1,4 @@
-const LINKER_SCRIPT: &'static str = "linker.ld";
+const LINKER_SCRIPT: &str = "linker.ld";
 fn main() {
     println!("cargo:rerun-if-changed={LINKER_SCRIPT}");
     println!("cargo:rustc-link-arg=-T{LINKER_SCRIPT}");

@@ -219,8 +219,8 @@ static TEST_DATA_B_I8: &[i8] = &[
 fn i16_exec(thread_count: usize) {
     let mut group_metrics = Vec::with_capacity(thread_count);
 
-    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I16));
-    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I16));
+    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I16.iter().cloned()));
+    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I16.iter().cloned()));
 
     for threads in (1..=thread_count).rev() {
         // normal array
@@ -321,8 +321,8 @@ fn i16_exec(thread_count: usize) {
 fn i8_exec(thread_count: usize) {
     let mut group_metrics = Vec::with_capacity(thread_count);
 
-    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I8));
-    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I8));
+    let data_a = Arc::new(PextVec::from(TEST_DATA_A_I8.iter().cloned()));
+    let data_b = Arc::new(PextVec::from(TEST_DATA_B_I8.iter().cloned()));
 
     for threads in (1..=thread_count).rev() {
         // normal array

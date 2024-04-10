@@ -1,5 +1,5 @@
 { lib
-, stdenv
+, stdenvNoCC
 , rust-bin
 , makeRustPlatform
 , pkgsCross
@@ -17,7 +17,7 @@ let
     cargo = rust-bin-nightly;
   });
 in
-stdenv.mkDerivation rec {
+stdenvNoCC.mkDerivation rec {
   pname = "rust-test-programs";
   version = "0.1.0";
 
@@ -35,7 +35,7 @@ stdenv.mkDerivation rec {
 
   cargoDeps = rustPlatform.fetchCargoTarball {
     inherit src;
-    hash = "sha256-2wTwDGM1WaPTu0mHN8rhBgvtj65VtIzOFrLydX8XaQ8=";
+    hash = "sha256-7VpvhxLgSqcH25Y0kkkxUCEIQ94PnEe7nZrj+yzIkc0=";
 
     buildPhase = ''
       runHook preBuild

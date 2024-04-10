@@ -51,3 +51,39 @@ pub fn smaltt(mut acc: usize, a: usize, b: usize) -> usize {
     };
     acc
 }
+
+#[inline(always)]
+pub fn ucmplt16(a: usize, b: usize) -> usize {
+    let mut out: usize;
+    unsafe {
+        asm!(".insn r 0b1110111, 0, 0b0010110, {out}, {in1}, {in2}", out = out(reg)out, in1 = in(reg)a, in2= in(reg)b);
+    }
+    out
+}
+
+#[inline(always)]
+pub fn scmplt16(a: usize, b: usize) -> usize {
+    let mut out: usize;
+    unsafe {
+        asm!(".insn r 0b1110111, 0, 0b0000110, {out}, {in1}, {in2}", out = out(reg)out, in1 = in(reg)a, in2= in(reg)b);
+    }
+    out
+}
+
+#[inline(always)]
+pub fn ucmplt8(a: usize, b: usize) -> usize {
+    let mut out: usize;
+    unsafe {
+        asm!(".insn r 0b1110111, 0, 0b0010111, {out}, {in1}, {in2}", out = out(reg)out, in1 = in(reg)a, in2= in(reg)b);
+    }
+    out
+}
+
+#[inline(always)]
+pub fn scmplt8(a: usize, b: usize) -> usize {
+    let mut out: usize;
+    unsafe {
+        asm!(".insn r 0b1110111, 0, 0b0000111, {out}, {in1}, {in2}", out = out(reg)out, in1 = in(reg)a, in2= in(reg)b);
+    }
+    out
+}

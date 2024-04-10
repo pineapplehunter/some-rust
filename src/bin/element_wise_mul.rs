@@ -232,13 +232,13 @@ extern "C" fn main(thread_id: usize) {
     println!("sample metrics = {:?}", met);
 
     // i16
-    let sample = PextVec::<u16>::from(&[1, 2, 3, 4, 5][..]);
+    let sample = PextVec::<u16>::from([1, 2, 3, 4, 5].into_iter());
     println!("i16 sample = {:?}", sample);
 
     let (cycle1, res1) = get_metrics(|| element_wise_mul_i16(TEST_DATA_A_I16, TEST_DATA_B_I16));
 
-    let a2 = PextVec::from(TEST_DATA_A_I16);
-    let b2 = PextVec::from(TEST_DATA_B_I16);
+    let a2 = PextVec::from(TEST_DATA_A_I16.iter().cloned());
+    let b2 = PextVec::from(TEST_DATA_B_I16.iter().cloned());
     let (cycle2, res2) = get_metrics(|| element_wise_mul_i16_simd(&a2, &b2));
 
     if res1.iter().zip(res2.iter()).all(|(&a, b)| a == b) {
@@ -252,13 +252,13 @@ extern "C" fn main(thread_id: usize) {
     }
 
     // i8
-    let sample = PextVec::<i8>::from(&[1, 2, 3, 4, 5, 6, 7, 8, 9][..]);
+    let sample = PextVec::<i8>::from([1, 2, 3, 4, 5, 6, 7, 8, 9].into_iter());
     println!("i8  sample = {:?}", sample);
 
     let (cycle1, res1) = get_metrics(|| element_wise_mul_i8(TEST_DATA_A_I8, TEST_DATA_B_I8));
 
-    let a2 = PextVec::from(TEST_DATA_A_I8);
-    let b2 = PextVec::from(TEST_DATA_B_I8);
+    let a2 = PextVec::from(TEST_DATA_A_I8.iter().cloned());
+    let b2 = PextVec::from(TEST_DATA_B_I8.iter().cloned());
     let (cycle2, res2) = get_metrics(|| element_wise_mul_i8_simd(&a2, &b2));
 
     if res1.iter().zip(res2.iter()).all(|(&a, b)| a == b) {
