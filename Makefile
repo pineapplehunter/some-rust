@@ -45,10 +45,10 @@ output/loader: $(RUST_TARGET)
 $(RUST_TARGET_OTHERS): $(RUST_TARGET)
 
 $(RUST_TARGET): $(RUST_SOURCES)
-	cargo build --release -Z unstable-options --out-dir output
+	cargo build --release -Z unstable-options --artifact-dir output
 
 $(RUST_TARGET2): $(RUST_SOURCES)
-	cargo build --release -Z unstable-options --out-dir output
+	cargo build --release -Z unstable-options --artifact-dir output
 
 run: $(RUST_TARGET)
 	qemu-system-riscv64 -machine sifive_u -cpu rv64 -m 256M -bios none -display none -serial stdio -kernel $<

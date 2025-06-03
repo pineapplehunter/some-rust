@@ -5,7 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-critical-section = {version = "1.1.2", optional = true}
+critical-section = { version = "1.1.2", optional = true }
 embedded-hal-nb = "1.0.0"
 heapless = "0.8.0"
 linked_list_allocator = "0.10.5"
@@ -19,7 +19,7 @@ lto = true
 #overflow-checks = true
 #debug-assertions = true
 [features]
-default = [ "b4smt" ]
+default = ["b4smt"]
 unicode = []
 uart_sifive_u = []
 critical_section_mt = ["critical-section"]
