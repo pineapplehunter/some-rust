@@ -15,9 +15,15 @@
       packages.x86_64-linux.default = pkgs.callPackage ./package.nix { };
 
       devShells.x86_64-linux.default = pkgs.mkShell {
-        packages = with pkgs;[ 
-          gnumake 
-          pkgsCross.riscv64-embedded.stdenv.cc 
+        packages = with pkgs; [
+          (rust-bin.nightly.latest.default.override {
+            extensions = [
+              "rust-analyzer"
+              "rust-src"
+            ];
+          })
+          gnumake
+          pkgsCross.riscv64-embedded.stdenv.cc
         ];
       };
 
