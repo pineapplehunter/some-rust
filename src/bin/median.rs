@@ -12,7 +12,7 @@ use rust_riscv_benches::pxet::structure::PextVec;
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{get_thread_count, println};
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn median_i16(input: &[i16], result: &mut [i16]) {
     assert_eq!(input.len(), result.len());
@@ -44,7 +44,7 @@ fn median_i16(input: &[i16], result: &mut [i16]) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn median_i8(input: &[i8], result: &mut [i8]) {
     assert_eq!(input.len(), result.len());
@@ -76,7 +76,7 @@ fn median_i8(input: &[i8], result: &mut [i8]) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn median_p_i16(input: &PextVec<i16>, result: &mut PextVec<i16>) {
     for (win, out) in input
@@ -108,7 +108,7 @@ fn median_p_i16(input: &PextVec<i16>, result: &mut PextVec<i16>) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn median_p_i8(input: &PextVec<i8>, result: &mut PextVec<i8>) {
     for (win, out) in input
@@ -393,7 +393,7 @@ fn other_hart_entry() {
 }
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn main(thread_id: usize) {
     if thread_id == 0 {
         first_hart_entry()

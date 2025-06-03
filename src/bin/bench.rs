@@ -12,7 +12,7 @@ use rust_riscv_benches::get_thread_count;
 static COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn fibonacci(n: usize) -> usize {
     let mut a = 1;
     let mut b = 1;
@@ -24,7 +24,8 @@ pub extern "C" fn fibonacci(n: usize) -> usize {
     b
 }
 
-static mut RESULTS: [usize; 50] = [0; 50];
+const RESULTS_LEN: usize = 50;
+static mut RESULTS: [usize; RESULTS_LEN] = [0; RESULTS_LEN];
 static START: AtomicBool = AtomicBool::new(false);
 static THREADS_DONE: AtomicUsize = AtomicUsize::new(0);
 
@@ -36,7 +37,7 @@ pub fn get_thread_id() -> usize {
     thread_id
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 extern "C" fn main(thread_id: usize) {
     use fmt::Write;
@@ -55,7 +56,7 @@ extern "C" fn main(thread_id: usize) {
 
     loop {
         let a = COUNT.fetch_add(1, Ordering::Relaxed);
-        if a < unsafe { RESULTS.len() } {
+        if a < RESULTS_LEN {
             unsafe {
                 RESULTS[a] = fibonacci(a);
             }

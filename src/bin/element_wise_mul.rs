@@ -16,7 +16,7 @@ use rust_riscv_benches::{
     },
 };
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i16(a: &[i16], b: &[i16]) -> Vec<i32> {
     a.iter()
@@ -25,7 +25,7 @@ fn element_wise_mul_i16(a: &[i16], b: &[i16]) -> Vec<i32> {
         .collect()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i8(a: &[i8], b: &[i8]) -> Vec<i16> {
     a.iter()
@@ -34,7 +34,7 @@ fn element_wise_mul_i8(a: &[i8], b: &[i8]) -> Vec<i16> {
         .collect()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i16_simd(a: &PextVec<i16>, b: &PextVec<i16>) -> PextVec<i32> {
     let a = a.get_inner();
@@ -51,7 +51,7 @@ fn element_wise_mul_i16_simd(a: &PextVec<i16>, b: &PextVec<i16>) -> PextVec<i32>
     PextVec::<i32>::from_parts(out_vec, a.len() * 2)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i8_simd(a: &PextVec<i8>, b: &PextVec<i8>) -> PextVec<i16> {
     let a = a.get_inner();
@@ -212,7 +212,7 @@ static TEST_DATA_B_I8: &[i8] = &[
 ];
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn main(thread_id: usize) {
     if thread_id != 0 {
         return;

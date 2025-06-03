@@ -1,4 +1,4 @@
-extern "C" {
+unsafe extern "C" {
     fn __delay(amount: usize);
 }
 #[inline(always)]

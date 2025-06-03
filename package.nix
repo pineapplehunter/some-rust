@@ -46,7 +46,7 @@ stdenvNoCC.mkDerivation rec {
       # order is important !!!
       (rustPlatform.fetchCargoVendor {
         inherit src pname version;
-        hash = "sha256-mhOzKjP5/8SWMaGyCSM4QjTMTR4W1c7sfPWpiKuCrXQ=";
+        hash = "sha256-euRgvw4g8qweZyZbT5/AyFUXNZ/S7bNE7Hr7B3IOIQw=";
       })
       (rustPlatform.fetchCargoVendor {
         name = "rust-std";

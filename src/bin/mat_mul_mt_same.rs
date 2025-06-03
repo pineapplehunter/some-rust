@@ -11,7 +11,7 @@ use rust_riscv_benches::pxet::structure::{Matrix, PextMat};
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{get_thread_count, println, pxet::asm::smul16};
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn mat_mul_i16(a: &Matrix<i16>, b: &Matrix<i16>, result: &mut Matrix<i32>) {
     // assert_eq!(a.width, b.height);
@@ -29,7 +29,7 @@ fn mat_mul_i16(a: &Matrix<i16>, b: &Matrix<i16>, result: &mut Matrix<i32>) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn mat_mul_i16_smul16(a: &PextMat<i16>, b: &PextMat<i16>, result: &mut PextMat<i32>) {
     // assert_eq!(a.width, b.height);
@@ -61,7 +61,7 @@ fn mat_mul_i16_smul16(a: &PextMat<i16>, b: &PextMat<i16>, result: &mut PextMat<i
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn mat_mul_i16_smul16_transposed(a: &PextMat<i16>, b: &PextMat<i16>, result: &mut PextMat<i32>) {
     // assert_eq!(a.width, b.height);
@@ -93,7 +93,7 @@ fn mat_mul_i16_smul16_transposed(a: &PextMat<i16>, b: &PextMat<i16>, result: &mu
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn mat_mul_i16_smal(a: &PextMat<i16>, b: &PextMat<i16>, result: &mut PextMat<i32>) {
     // assert_eq!(a.width, b.height);
@@ -120,7 +120,7 @@ fn mat_mul_i16_smal(a: &PextMat<i16>, b: &PextMat<i16>, result: &mut PextMat<i32
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn mat_mul_i16_smal_transposed(a: &PextMat<i16>, b: &PextMat<i16>, result: &mut PextMat<i32>) {
     // assert_eq!(a.width, b.height);
@@ -1597,7 +1597,7 @@ fn other_hart_entry() {
 }
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn main(thread_id: usize) {
     if thread_id == 0 {
         first_hart_entry()

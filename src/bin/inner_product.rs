@@ -29,7 +29,7 @@ fn khm16(a: usize, b: usize) -> usize {
     out
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 unsafe fn inner_product_u16_pext(a: &mut [i16], b: &[i16]) {
     assert_eq!(a.len(), b.len());
@@ -92,7 +92,7 @@ unsafe fn inner_product_u16_pext(a: &mut [i16], b: &[i16]) {
 }
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn main(thread_id: usize) {
     if thread_id != 0 {
         return;

@@ -17,7 +17,7 @@ use rust_riscv_benches::{
     },
 };
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i16(a: &[i16], b: &[i16], result: &mut [i32], threads: usize, index: usize) {
     for i in (0..result.len()).skip(index).step_by(threads) {
@@ -25,7 +25,7 @@ fn element_wise_mul_i16(a: &[i16], b: &[i16], result: &mut [i32], threads: usize
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i8(a: &[i8], b: &[i8], result: &mut [i16], threads: usize, index: usize) {
     for i in (0..result.len()).skip(index).step_by(threads) {
@@ -33,7 +33,7 @@ fn element_wise_mul_i8(a: &[i8], b: &[i8], result: &mut [i16], threads: usize, i
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 #[allow(dead_code)]
 fn element_wise_mul_i16_simd(
@@ -53,7 +53,7 @@ fn element_wise_mul_i16_simd(
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 #[allow(dead_code)]
 fn element_wise_mul_i8_simd(
@@ -434,7 +434,7 @@ fn other_hart_entry() {
 }
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn main(thread_id: usize) {
     if thread_id == 0 {
         first_hart_entry()

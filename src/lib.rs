@@ -12,7 +12,7 @@ use core::{
 
 use crate::heap::CustomLockedHeap;
 use crate::{
-    io::{ioport::IOPort, MAIN_OUTPUT},
+    io::{MAIN_OUTPUT, ioport::IOPort},
     linker::{HEAP_END, PROGRAM_END},
 };
 
@@ -45,12 +45,12 @@ pub fn get_thread_count() -> usize {
     THREAD_COUNT.fetch_or(0, Ordering::Relaxed)
 }
 
-extern "Rust" {
+unsafe extern "Rust" {
     fn main(thread_id: usize);
 }
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe fn clear_bss() {
     // ASSUMES BSS IS 64bit ALIGNED !!!
     let mut start = addr_of!(linker::BSS_START).cast_mut();
@@ -67,7 +67,7 @@ static HEAP: CustomLockedHeap = CustomLockedHeap::empty();
 
 /// # Safety
 /// this will only be called from asm
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 pub unsafe extern "C" fn init_rt(thread_id: usize) -> ! {
     // DON'T ASSUME BSS IS 0 AT THIS POINT!!!!
@@ -109,7 +109,7 @@ pub struct TrapFrame {
     pub hartid: usize,       // 528
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 extern "C" fn m_trap(frame: TrapFrame) {
     println!("TRAP!!!!");

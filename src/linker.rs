@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "__UART_START"]
     pub static UART: u8;
     #[link_name = "__GPIO_START"]

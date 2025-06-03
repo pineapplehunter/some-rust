@@ -80,7 +80,7 @@ fn fibonacci() {
     )
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 pub extern "C" fn main() {
     let thread_id = get_thread_id();

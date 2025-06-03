@@ -16,7 +16,7 @@ use rust_riscv_benches::{
     },
 };
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i16_halving(a: &[i16], b: &[i16]) -> Vec<i16> {
     a.iter()
@@ -25,7 +25,7 @@ fn element_wise_mul_i16_halving(a: &[i16], b: &[i16]) -> Vec<i16> {
         .collect()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i16_halving_simd(a: &PextVec<i16>, b: &PextVec<i16>) -> PextVec<i16> {
     let a = a.get_inner();
@@ -34,7 +34,7 @@ fn element_wise_mul_i16_halving_simd(a: &PextVec<i16>, b: &PextVec<i16>) -> Pext
     PextVec::<i16>::from_parts(out_vec, a.len())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i8_halving(a: &[i8], b: &[i8]) -> Vec<i8> {
     a.iter()
@@ -43,7 +43,7 @@ fn element_wise_mul_i8_halving(a: &[i8], b: &[i8]) -> Vec<i8> {
         .collect()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline(never)]
 fn element_wise_mul_i8_halving_simd(a: &PextVec<i8>, b: &PextVec<i8>) -> PextVec<i8> {
     let a = a.get_inner();
@@ -131,7 +131,7 @@ static TEST_DATA_B_I8: &[i8] = &[
 ];
 
 #[inline(never)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn main(thread_id: usize) {
     if thread_id != 0 {
         return;
