@@ -6,8 +6,8 @@ extern crate alloc;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use rust_riscv_benches::metrics::{get_metrics, Metrics, MetricsCSV};
-use rust_riscv_benches::pxet::asm::{ucmplt16, ucmplt8};
+use rust_riscv_benches::metrics::{Metrics, MetricsCSV, get_metrics};
+use rust_riscv_benches::pxet::asm::{ucmplt8, ucmplt16};
 use rust_riscv_benches::pxet::structure::PextVec;
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{get_thread_count, println};
@@ -370,7 +370,9 @@ fn threaded_bench(threads: usize) {
 #[inline(never)]
 fn first_hart_entry() {
     println!("B4SMT evaluation program");
-    println!("This program measures the performance difference of normal and pext matrix multiplication of arrays.");
+    println!(
+        "This program measures the performance difference of normal and pext matrix multiplication of arrays."
+    );
     println!("START");
 
     println!(

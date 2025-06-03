@@ -1,7 +1,7 @@
 use core::fmt;
 use core::mem::size_of;
-use core::ptr::addr_of_mut;
 use core::ptr::NonNull;
+use core::ptr::addr_of_mut;
 
 use crate::linker::UART;
 
@@ -10,7 +10,7 @@ use alloc::sync::Arc;
 use embedded_hal_nb::serial::{self, ErrorKind, ErrorType};
 use nb::block;
 use spin::{Lazy, Mutex};
-use volatile::{map_field, VolatilePtr};
+use volatile::{VolatilePtr, map_field};
 
 #[repr(C)]
 #[derive(Copy, Clone)]

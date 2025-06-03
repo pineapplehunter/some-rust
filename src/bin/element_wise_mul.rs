@@ -11,7 +11,7 @@ use rust_riscv_benches::{
     metrics::get_metrics,
     println,
     pxet::{
-        asm::{smul16, smul8},
+        asm::{smul8, smul16},
         structure::PextVec,
     },
 };
@@ -219,14 +219,12 @@ extern "C" fn main(thread_id: usize) {
     }
 
     println!("Rust on B4SMT");
-    unsafe {
-        println!(
-            "Heap from = {:?} to {:?} size = {}",
-            addr_of!(PROGRAM_END),
-            addr_of!(HEAP_END),
-            addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize
-        );
-    }
+    println!(
+        "Heap from = {:?} to {:?} size = {}",
+        addr_of!(PROGRAM_END),
+        addr_of!(HEAP_END),
+        addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize
+    );
 
     let (met, _) = get_metrics(|| ());
     println!("sample metrics = {:?}", met);

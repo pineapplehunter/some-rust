@@ -91,8 +91,7 @@ pub fn get_metrics<R, F: FnOnce() -> R>(f: F) -> (Metrics, R) {
 pub struct MetricsCSV<'a>(&'a MetricsInstant);
 
 impl MetricsCSV<'_> {
-    pub const HEADER: &'static str =
-        "thread_id,cycle,instret,executor,load,store,amo,lr,sc,sc_fail,error,pext,reorderbuffer_full,load_store_full,atomic_full,reservation_station_full";
+    pub const HEADER: &'static str = "thread_id,cycle,instret,executor,load,store,amo,lr,sc,sc_fail,error,pext,reorderbuffer_full,load_store_full,atomic_full,reservation_station_full";
 }
 
 impl<'a> fmt::Display for MetricsCSV<'a> {

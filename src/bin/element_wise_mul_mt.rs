@@ -6,13 +6,13 @@ extern crate alloc;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use rust_riscv_benches::metrics::{get_metrics, MetricsCSV};
+use rust_riscv_benches::metrics::{MetricsCSV, get_metrics};
 use rust_riscv_benches::sync::UnsafeSyncCell;
 use rust_riscv_benches::thread::{event_loop, event_loop_until_empty, spawn};
 use rust_riscv_benches::{
     get_thread_count, println,
     pxet::{
-        asm::{smul16, smul8},
+        asm::{smul8, smul16},
         structure::PextVec,
     },
 };

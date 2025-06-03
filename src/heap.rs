@@ -20,7 +20,7 @@ unsafe impl alloc::alloc::GlobalAlloc for CustomLockedHeap {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
-        self.lock().deallocate(NonNull::new(ptr).unwrap(), layout)
+        unsafe { self.lock().deallocate(NonNull::new(ptr).unwrap(), layout) }
     }
 }
 

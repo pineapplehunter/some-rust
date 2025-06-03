@@ -13,12 +13,10 @@ use crate::linker::{GPIO, PROGRAM_END, RAM};
 static LOAD_DONE: AtomicBool = AtomicBool::new(false);
 
 fn show_program_info() {
-    unsafe {
-        dbg!(addr_of!(UART));
-        dbg!(addr_of!(GPIO));
-        dbg!(addr_of!(RAM));
-        dbg!(addr_of!(PROGRAM_END));
-    }
+    dbg!(addr_of!(UART));
+    dbg!(addr_of!(GPIO));
+    dbg!(addr_of!(RAM));
+    dbg!(addr_of!(PROGRAM_END));
 }
 
 fn echo() {

@@ -316,10 +316,12 @@ macro_rules! gen_PextVecType {
 
             #[inline(always)]
             pub unsafe fn get_slice_mut_as_type(&mut self) -> &mut [$t] {
-                &mut *core::ptr::slice_from_raw_parts_mut(
-                    self.inner.as_mut_slice().as_ptr() as *mut usize as *mut $t,
-                    self.inner.len() * Self::RATIO,
-                )
+                unsafe {
+                    &mut *core::ptr::slice_from_raw_parts_mut(
+                        self.inner.as_mut_slice().as_ptr() as *mut usize as *mut $t,
+                        self.inner.len() * Self::RATIO,
+                    )
+                }
             }
 
             pub fn ratio(&self) -> usize {

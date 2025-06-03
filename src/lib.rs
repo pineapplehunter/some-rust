@@ -52,13 +52,15 @@ unsafe extern "Rust" {
 #[inline(never)]
 #[unsafe(no_mangle)]
 unsafe fn clear_bss() {
-    // ASSUMES BSS IS 64bit ALIGNED !!!
-    let mut start = addr_of!(linker::BSS_START).cast_mut();
-    let end = addr_of!(linker::BSS_END);
+    unsafe {
+        // ASSUMES BSS IS 64bit ALIGNED !!!
+        let mut start = addr_of!(linker::BSS_START).cast_mut();
+        let end = addr_of!(linker::BSS_END);
 
-    while (start as usize) < (end as usize) {
-        start.write_volatile(0);
-        start = start.offset(1);
+        while (start as usize) < (end as usize) {
+            start.write_volatile(0);
+            start = start.offset(1);
+        }
     }
 }
 
@@ -70,30 +72,32 @@ static HEAP: CustomLockedHeap = CustomLockedHeap::empty();
 #[unsafe(no_mangle)]
 #[inline(never)]
 pub unsafe extern "C" fn init_rt(thread_id: usize) -> ! {
-    // DON'T ASSUME BSS IS 0 AT THIS POINT!!!!
-    RT_INIT_DONE.store(false, Ordering::SeqCst);
-    if thread_id == 0 {
-        unsafe { clear_bss() };
+    unsafe {
+        // DON'T ASSUME BSS IS 0 AT THIS POINT!!!!
+        RT_INIT_DONE.store(false, Ordering::SeqCst);
+        if thread_id == 0 {
+            clear_bss();
 
-        let thread_count: usize;
-        asm!("csrr {}, 0xCC0", out(reg) thread_count);
-        THREAD_COUNT.store(thread_count, Ordering::Relaxed);
+            let thread_count: usize;
+            asm!("csrr {}, 0xCC0", out(reg) thread_count);
+            THREAD_COUNT.store(thread_count, Ordering::Relaxed);
 
-        let heap_size = addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize;
-        let heap_addr = addr_of!(PROGRAM_END) as *mut u8;
-        unsafe { HEAP.lock().init(heap_addr, heap_size) }
+            let heap_size = addr_of!(HEAP_END) as usize - addr_of!(PROGRAM_END) as usize;
+            let heap_addr = addr_of!(PROGRAM_END) as *mut u8;
+            HEAP.lock().init(heap_addr, heap_size);
 
-        RT_INIT_DONE.swap(true, Ordering::Relaxed);
-    } else {
-        while RT_INIT_DONE.load(Ordering::SeqCst) {
-            riscv::asm::nop()
+            RT_INIT_DONE.swap(true, Ordering::Relaxed);
+        } else {
+            while RT_INIT_DONE.load(Ordering::SeqCst) {
+                riscv::asm::nop()
+            }
         }
-    }
-    // JUMP TO MAIN!!!
-    main(thread_id);
+        // JUMP TO MAIN!!!
+        main(thread_id);
 
-    loop {
-        riscv::asm::nop();
+        loop {
+            riscv::asm::nop();
+        }
     }
 }
 

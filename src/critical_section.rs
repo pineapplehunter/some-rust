@@ -1,6 +1,6 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 
-use critical_section::{set_impl, Impl, RawRestoreState};
+use critical_section::{Impl, RawRestoreState, set_impl};
 
 use crate::delay::delay;
 

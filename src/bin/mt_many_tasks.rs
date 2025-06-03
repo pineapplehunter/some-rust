@@ -10,7 +10,7 @@ use rust_riscv_benches::thread::{event_loop, spawn};
 use rust_riscv_benches::{
     get_thread_id,
     pxet::{
-        asm::{smul16, smul8},
+        asm::{smul8, smul16},
         structure::PextVec,
     },
 };
