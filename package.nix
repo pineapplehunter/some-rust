@@ -24,6 +24,8 @@ stdenvNoCC.mkDerivation rec {
   pname = "rust-test-programs";
   version = "0.1.0";
 
+  enablePaarallelBuilding = true;
+
   src = lib.sources.sourceByRegex ./. [
     "Cargo.*"
     "src.*"
@@ -64,6 +66,4 @@ stdenvNoCC.mkDerivation rec {
     mkdir $out
     cp output/* $out/
   '';
-
-  dontPatchElf = true;
 }
