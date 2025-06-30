@@ -8,11 +8,7 @@
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      rust-overlay,
-    }:
+    { nixpkgs, rust-overlay, ... }:
     let
       pkgs = import nixpkgs {
         system = "x86_64-linux";
@@ -24,12 +20,15 @@
 
       devShells.x86_64-linux.default = pkgs.mkShell {
         packages = with pkgs; [
-          (rust-bin.nightly.latest.default.override {
-            extensions = [
-              "rust-analyzer"
-              "rust-src"
-            ];
-          })
+          (rust-bin.selectLatestNightlyWith (
+            toolchain:
+            toolchain.default.override {
+              extensions = [
+                "rust-analyzer"
+                "rust-src"
+              ];
+            }
+          ))
           gnumake
           pkgsCross.riscv64-embedded.stdenv.cc
         ];

@@ -8,10 +8,12 @@
 }:
 
 let
-  rust-bin-nightly = rust-bin.nightly.latest.minimal.override {
-    extensions = [ "rust-src" ];
-    targets = [ ];
-  };
+  rust-bin-nightly = rust-bin.selectLatestNightlyWith (
+    toolchain:
+    toolchain.minimal.override {
+      extensions = [ "rust-src" ];
+    }
+  );
   rustPlatform = (
     makeRustPlatform {
       rustc = rust-bin-nightly;
@@ -26,15 +28,19 @@ stdenvNoCC.mkDerivation rec {
 
   enablePaarallelBuilding = true;
 
-  src = lib.sources.sourceByRegex ./. [
-    "Cargo.*"
-    "src.*"
-    "riscv64-custom.json"
-    "Makefile"
-    ".cargo.*"
-    "linker.ld"
-    "build.rs"
-  ];
+  src = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./.cargo
+      ./Cargo.lock
+      ./Cargo.toml
+      ./Makefile
+      ./build.rs
+      ./linker.ld
+      ./riscv64-custom.json
+      ./src
+    ];
+  };
 
   nativeBuildInputs = [
     rust-bin-nightly
@@ -53,7 +59,7 @@ stdenvNoCC.mkDerivation rec {
       (rustPlatform.fetchCargoVendor {
         name = "rust-std";
         src = "${rust-bin-nightly}/lib/rustlib/src/rust/library";
-        hash = "sha256-ds+l3xz0YYMPJxvjQiSWRCrIzC5aQkOitWFgDlaGheY=";
+        hash = "sha256-0fkHVqtvZbVm2fhVB+8IomaWKMMl3N4NvOe6qYp7304=";
       })
     ];
   };
