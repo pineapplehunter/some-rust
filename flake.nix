@@ -3,39 +3,48 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixpkgs-unstable";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, rust-overlay, ... }:
-    let
-      pkgs = import nixpkgs {
-        system = "x86_64-linux";
-        overlays = [ rust-overlay.overlays.default ];
-      };
-    in
-    {
-      packages.x86_64-linux.default = pkgs.callPackage ./package.nix { };
+    { flake-parts, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      perSystem =
+        { pkgs, system, ... }:
+        {
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [
+              inputs.rust-overlay.overlays.default
+            ];
+          };
+          packages.default = pkgs.callPackage ./package.nix { };
 
-      devShells.x86_64-linux.default = pkgs.mkShell {
-        packages = with pkgs; [
-          (rust-bin.selectLatestNightlyWith (
-            toolchain:
-            toolchain.default.override {
-              extensions = [
-                "rust-analyzer"
-                "rust-src"
-              ];
-            }
-          ))
-          gnumake
-          pkgsCross.riscv64-embedded.stdenv.cc
-        ];
-      };
+          devShells.default = pkgs.mkShell {
+            packages = with pkgs; [
+              (rust-bin.selectLatestNightlyWith (
+                toolchain:
+                toolchain.default.override {
+                  extensions = [
+                    "rust-analyzer"
+                    "rust-src"
+                  ];
+                }
+              ))
+              gnumake
+              pkgsCross.riscv64-embedded.stdenv.cc
+            ];
+          };
 
-      legacyPackages.x86_64-linux = pkgs;
-
-      formatter.x86_64-linux = pkgs.nixpkgs-fmt;
+          formatter = pkgs.nixfmt-tree;
+        };
     };
 }
