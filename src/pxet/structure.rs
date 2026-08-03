@@ -59,7 +59,7 @@ impl<T> PextVec<T> {
         &mut self.inner
     }
 
-    pub fn iter(&self) -> PextVecIter<T> {
+    pub fn iter(&self) -> PextVecIter<'_, T> {
         PextVecIter {
             inner: self,
             idx: 0,
@@ -72,6 +72,9 @@ impl<T> PextVec<T> {
 }
 
 impl<T> PextMat<T> {
+    /// # Safety
+    /// The caller must ensure any aliasing rules are upheld while the slice is
+    /// mutably borrowed.
     pub unsafe fn get_slice_mut(&mut self) -> &mut [usize] {
         self.inner.as_mut_slice()
     }
@@ -315,6 +318,8 @@ macro_rules! gen_PextVecType {
             }
 
             #[inline(always)]
+            /// # Safety
+            /// The caller must ensure the underlying storage is valid for `$t`.
             pub unsafe fn get_slice_mut_as_type(&mut self) -> &mut [$t] {
                 unsafe {
                     &mut *core::ptr::slice_from_raw_parts_mut(
@@ -373,87 +378,89 @@ gen_PextVecType!(i32, u32, i64);
 gen_PextVecType!(i16, u16, i32);
 gen_PextVecType!(i8, u8, i16);
 
+#[allow(clippy::identity_op)]
 pub const fn transposei16_4x4(m: [usize; 4]) -> [usize; 4] {
     let mut out = [0; 4];
-    out[0] = ((m[0] >> 00) & 0xFFFF << 00)
-        | ((m[1] >> 00) & 0xFFFF << 16)
-        | ((m[2] >> 00) & 0xFFFF << 32)
-        | ((m[3] >> 00) & 0xFFFF << 48);
-    out[1] = ((m[0] >> 16) & 0xFFFF << 00)
+    out[0] = ((m[0] >> 0) & 0xFFFF << 0)
+        | ((m[1] >> 0) & 0xFFFF << 16)
+        | ((m[2] >> 0) & 0xFFFF << 32)
+        | ((m[3] >> 0) & 0xFFFF << 48);
+    out[1] = ((m[0] >> 16) & 0xFFFF << 0)
         | ((m[1] >> 16) & 0xFFFF << 16)
         | ((m[2] >> 16) & 0xFFFF << 32)
         | ((m[3] >> 16) & 0xFFFF << 48);
-    out[2] = ((m[0] >> 32) & 0xFFFF << 00)
+    out[2] = ((m[0] >> 32) & 0xFFFF << 0)
         | ((m[1] >> 32) & 0xFFFF << 16)
         | ((m[2] >> 32) & 0xFFFF << 32)
         | ((m[3] >> 32) & 0xFFFF << 48);
-    out[3] = ((m[0] >> 48) & 0xFFFF << 00)
+    out[3] = ((m[0] >> 48) & 0xFFFF << 0)
         | ((m[1] >> 48) & 0xFFFF << 16)
         | ((m[2] >> 48) & 0xFFFF << 32)
         | ((m[3] >> 48) & 0xFFFF << 48);
     out
 }
 
+#[allow(clippy::identity_op)]
 pub const fn transposei8_8x8(m: [usize; 8]) -> [usize; 8] {
     let mut out = [0; 8];
-    out[0] = ((m[0] >> 00) & 0xFF << 00)
-        | ((m[1] >> 00) & 0xFF << 08)
-        | ((m[2] >> 00) & 0xFF << 16)
-        | ((m[3] >> 00) & 0xFF << 24)
-        | ((m[4] >> 00) & 0xFF << 32)
-        | ((m[5] >> 00) & 0xFF << 40)
-        | ((m[6] >> 00) & 0xFF << 48)
-        | ((m[7] >> 00) & 0xFF << 56);
-    out[1] = ((m[0] >> 08) & 0xFF << 00)
-        | ((m[1] >> 08) & 0xFF << 08)
-        | ((m[2] >> 08) & 0xFF << 16)
-        | ((m[3] >> 08) & 0xFF << 24)
-        | ((m[4] >> 08) & 0xFF << 32)
-        | ((m[5] >> 08) & 0xFF << 40)
-        | ((m[6] >> 08) & 0xFF << 48)
-        | ((m[7] >> 08) & 0xFF << 56);
-    out[2] = ((m[0] >> 16) & 0xFF << 00)
-        | ((m[1] >> 16) & 0xFF << 08)
+    out[0] = ((m[0] >> 0) & 0xFF << 0)
+        | ((m[1] >> 0) & 0xFF << 8)
+        | ((m[2] >> 0) & 0xFF << 16)
+        | ((m[3] >> 0) & 0xFF << 24)
+        | ((m[4] >> 0) & 0xFF << 32)
+        | ((m[5] >> 0) & 0xFF << 40)
+        | ((m[6] >> 0) & 0xFF << 48)
+        | ((m[7] >> 0) & 0xFF << 56);
+    out[1] = ((m[0] >> 8) & 0xFF << 0)
+        | ((m[1] >> 8) & 0xFF << 8)
+        | ((m[2] >> 8) & 0xFF << 16)
+        | ((m[3] >> 8) & 0xFF << 24)
+        | ((m[4] >> 8) & 0xFF << 32)
+        | ((m[5] >> 8) & 0xFF << 40)
+        | ((m[6] >> 8) & 0xFF << 48)
+        | ((m[7] >> 8) & 0xFF << 56);
+    out[2] = ((m[0] >> 16) & 0xFF << 0)
+        | ((m[1] >> 16) & 0xFF << 8)
         | ((m[2] >> 16) & 0xFF << 16)
         | ((m[3] >> 16) & 0xFF << 24)
         | ((m[4] >> 16) & 0xFF << 32)
         | ((m[5] >> 16) & 0xFF << 40)
         | ((m[6] >> 16) & 0xFF << 48)
         | ((m[7] >> 16) & 0xFF << 56);
-    out[3] = ((m[0] >> 24) & 0xFF << 00)
-        | ((m[1] >> 24) & 0xFF << 08)
+    out[3] = ((m[0] >> 24) & 0xFF << 0)
+        | ((m[1] >> 24) & 0xFF << 8)
         | ((m[2] >> 24) & 0xFF << 16)
         | ((m[3] >> 24) & 0xFF << 24)
         | ((m[4] >> 24) & 0xFF << 32)
         | ((m[5] >> 24) & 0xFF << 40)
         | ((m[6] >> 24) & 0xFF << 48)
         | ((m[7] >> 24) & 0xFF << 56);
-    out[4] = ((m[0] >> 32) & 0xFF << 00)
-        | ((m[1] >> 32) & 0xFF << 08)
+    out[4] = ((m[0] >> 32) & 0xFF << 0)
+        | ((m[1] >> 32) & 0xFF << 8)
         | ((m[2] >> 32) & 0xFF << 16)
         | ((m[3] >> 32) & 0xFF << 24)
         | ((m[4] >> 32) & 0xFF << 32)
         | ((m[5] >> 32) & 0xFF << 40)
         | ((m[6] >> 32) & 0xFF << 48)
         | ((m[7] >> 32) & 0xFF << 56);
-    out[5] = ((m[0] >> 40) & 0xFF << 00)
-        | ((m[1] >> 40) & 0xFF << 08)
+    out[5] = ((m[0] >> 40) & 0xFF << 0)
+        | ((m[1] >> 40) & 0xFF << 8)
         | ((m[2] >> 40) & 0xFF << 16)
         | ((m[3] >> 40) & 0xFF << 24)
         | ((m[4] >> 40) & 0xFF << 32)
         | ((m[5] >> 40) & 0xFF << 40)
         | ((m[6] >> 40) & 0xFF << 48)
         | ((m[7] >> 40) & 0xFF << 56);
-    out[6] = ((m[0] >> 48) & 0xFF << 00)
-        | ((m[1] >> 48) & 0xFF << 08)
+    out[6] = ((m[0] >> 48) & 0xFF << 0)
+        | ((m[1] >> 48) & 0xFF << 8)
         | ((m[2] >> 48) & 0xFF << 16)
         | ((m[3] >> 48) & 0xFF << 24)
         | ((m[4] >> 48) & 0xFF << 32)
         | ((m[5] >> 48) & 0xFF << 40)
         | ((m[6] >> 48) & 0xFF << 48)
         | ((m[7] >> 48) & 0xFF << 56);
-    out[7] = ((m[0] >> 56) & 0xFF << 00)
-        | ((m[1] >> 56) & 0xFF << 08)
+    out[7] = ((m[0] >> 56) & 0xFF << 0)
+        | ((m[1] >> 56) & 0xFF << 8)
         | ((m[2] >> 56) & 0xFF << 16)
         | ((m[3] >> 56) & 0xFF << 24)
         | ((m[4] >> 56) & 0xFF << 32)

@@ -12,7 +12,7 @@ use core::{
 
 use crate::heap::CustomLockedHeap;
 use crate::{
-    io::{MAIN_OUTPUT, ioport::IOPort},
+    io::{IOPort, MAIN_OUTPUT},
     linker::{HEAP_END, PROGRAM_END},
 };
 

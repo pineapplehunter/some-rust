@@ -59,6 +59,12 @@ impl ThreadSafeQueue {
     }
 }
 
+impl Default for ThreadSafeQueue {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 static MULTITHREAD_TASKS: ThreadSafeQueue = ThreadSafeQueue::new();
 
 pub struct TaskHandle<R: Send> {

@@ -35,7 +35,7 @@ impl<T> Mutex<T> {
     }
 
     // #[inline(never)]
-    pub fn lock(&self) -> MutexGuard<T> {
+    pub fn lock(&self) -> MutexGuard<'_, T> {
         loop {
             if let Some(guard) = self.try_lock() {
                 return guard;
@@ -44,7 +44,7 @@ impl<T> Mutex<T> {
     }
 
     // #[inline(never)]
-    pub fn try_lock(&self) -> Option<MutexGuard<T>> {
+    pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
         if self.lock.swap(1, Ordering::SeqCst) == 0 {
             Some(MutexGuard {
                 lock: &self.lock,

@@ -4,6 +4,7 @@
 use core::{
     arch::asm,
     fmt,
+    hint::spin_loop,
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
@@ -67,7 +68,9 @@ extern "C" fn main(thread_id: usize) {
     }
 
     if thread_id == 0 {
-        while get_thread_count() != THREADS_DONE.load(Ordering::Relaxed) {}
+        while get_thread_count() != THREADS_DONE.load(Ordering::Relaxed) {
+            spin_loop();
+        }
         unsafe { asm!("rdcycle {cycle}", cycle = out(reg) end_cycle) };
 
         writeln!(IOPort, "took {} cycles", end_cycle - start_cycle).unwrap();

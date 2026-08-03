@@ -24,7 +24,7 @@ pub struct MetricsInstant {
 pub struct Metrics(MetricsInstant);
 
 impl Metrics {
-    pub fn csv(&self) -> MetricsCSV {
+    pub fn csv(&self) -> MetricsCSV<'_> {
         MetricsCSV(&self.0)
     }
 }
@@ -51,7 +51,7 @@ impl MetricsInstant {
         }
     }
 
-    pub fn csv(&self) -> MetricsCSV {
+    pub fn csv(&self) -> MetricsCSV<'_> {
         MetricsCSV(self)
     }
 }
@@ -90,7 +90,7 @@ pub fn get_metrics<R, F: FnOnce() -> R>(f: F) -> (Metrics, R) {
 
 pub struct MetricsCSV<'a>(&'a MetricsInstant);
 
-impl MetricsCSV<'_> {
+impl<'a> MetricsCSV<'a> {
     pub const HEADER: &'static str = "thread_id,cycle,instret,executor,load,store,amo,lr,sc,sc_fail,error,pext,reorderbuffer_full,load_store_full,atomic_full,reservation_station_full";
 }
 
